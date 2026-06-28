@@ -1,0 +1,1029 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <!-- viewport-fit=cover sorgt dafür, dass die App auf modernen iPhones bis an den Rand geht -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Bella Italia 2026 V5 Ultimate</title>
+    
+    <!-- PWA Integration -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2563eb">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Bella Italia">
+    <link rel="apple-touch-icon" href="icon-192.png">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- Leaflet for Map -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
+        
+        :root {
+            --primary: #2563eb;
+            --surface: #ffffff;
+            --bg: #f8fafc;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a; 
+            color: #1e293b;
+            -webkit-tap-highlight-color: transparent;
+            overscroll-behavior-y: none;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        #app-wrapper {
+            width: 100%;
+            max-width: 480px; 
+            height: 100vh;
+            max-height: 100vh;
+            background-color: var(--bg);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+
+        @media (min-width: 481px) {
+            #app-wrapper {
+                height: 95vh;
+                max-height: 850px;
+                border-radius: 2rem; 
+                border: 8px solid #cbd5e1;
+            }
+        }
+
+        h1, h2, h3, h4, .font-heading { font-family: 'Plus Jakarta Sans', sans-serif; }
+
+        .glass-nav {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border-top: 1px solid rgba(226, 232, 240, 0.8);
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+
+        .tab-content { display: none; opacity: 0; transform: translateY(10px); transition: opacity 0.3s ease, transform 0.3s ease; }
+        .tab-content.active { display: block; opacity: 1; transform: translateY(0); }
+
+        .timeline-line { position: absolute; left: 24px; top: 20px; bottom: 20px; width: 3px; background: linear-gradient(to bottom, #3b82f6, #ef4444, #eab308, #22c55e); border-radius: 3px; z-index: 0; }
+        .timeline-card { position: relative; z-index: 1; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05); border: 1px solid rgba(226, 232, 240, 0.8); }
+        .image-container { position: relative; height: 180px; overflow: hidden; border-radius: 1rem 1rem 0 0; background-color: #cbd5e1;}
+        .image-container img { width: 100%; height: 100%; object-fit: cover; }
+
+        .check-container input:checked + div { background-color: #22c55e; border-color: #22c55e; }
+        .check-container input:checked + div svg { display: block; }
+        .check-container.completed span { text-decoration: line-through; color: #94a3b8; }
+
+        .nav-item { color: #94a3b8; transition: all 0.2s ease; cursor: pointer; }
+        .nav-item.active { color: var(--primary); }
+        .nav-item.active i { transform: translateY(-3px) scale(1.1); }
+        
+        .chat-bubble-bot { background: white; border-radius: 20px 20px 20px 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; }
+        .chat-bubble-user { background: var(--primary); color: white; border-radius: 20px 20px 4px 20px; }
+        
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+        #toast-container { position: absolute; top: 80px; left: 50%; transform: translateX(-50%); width: 90%; z-index: 100; pointer-events: none; display: flex; flex-direction: column; gap: 10px; }
+        .toast { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border-left: 4px solid var(--primary); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); border-radius: 8px; padding: 12px; transform: translateY(-20px); opacity: 0; animation: slideIn 0.3s forwards, slideOut 0.3s forwards 3.7s; pointer-events: auto;}
+        @keyframes slideIn { to { transform: translateY(0); opacity: 1; } }
+        @keyframes slideOut { to { transform: translateY(-20px); opacity: 0; } }
+
+        @keyframes shake { 0%, 100% {transform: translateX(0);} 25% {transform: translateX(-5px);} 75% {transform: translateX(5px);} }
+        .shake-err { animation: shake 0.4s ease-in-out; }
+        
+        .preview-card { scroll-snap-align: start; flex-shrink: 0; width: 140px; background: #f8fafc; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; text-decoration: none; color: inherit; position: relative;}
+        .preview-card:active { transform: scale(0.95); transition: transform 0.1s; }
+        .preview-card img { width: 100%; height: 90px; object-fit: cover; background-color: #e2e8f0;}
+        .external-link-icon { position: absolute; top: 4px; right: 4px; background: rgba(255,255,255,0.9); width: 20px; height: 20px; border-radius: 50%; display: flex; justify-content: center; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        
+        .speech-btn { cursor: pointer; transition: transform 0.1s; }
+        .speech-btn:active { transform: scale(0.85); color: var(--primary); }
+    </style>
+</head>
+<body>
+
+<div id="app-wrapper">
+
+    <header class="bg-white/90 backdrop-blur-md px-5 pt-safe-top pb-3 shadow-sm z-50 absolute top-0 w-full flex justify-between items-center" style="padding-top: env(safe-area-inset-top);">
+        <div class="mt-3">
+            <h1 class="text-2xl font-extrabold text-blue-900 tracking-tight leading-none">Bella Italia '26</h1>
+            <p class="text-[10px] text-gray-500 font-semibold uppercase tracking-wider mt-1">13.07. – 23.07. • 👨‍👩‍👧‍👦 4 Pers. • 🚙 RAV4</p>
+        </div>
+        <div class="flex gap-2 mt-3">
+            <button onclick="app.triggerLiveNotification()" class="h-10 w-10 bg-yellow-100 rounded-full flex items-center justify-center text-yellow-600 shadow-inner active:scale-95 transition" title="Live-Meldung">
+                <i class="fa-solid fa-bell text-lg"></i>
+            </button>
+        </div>
+    </header>
+
+    <div id="toast-container"></div>
+
+    <main class="flex-1 overflow-y-auto pt-20 pb-20 bg-slate-50 relative" id="main-scroll">
+        
+        <section id="tab-route" class="tab-content active relative min-h-full px-4 pt-4">
+            <div class="relative">
+                <div class="timeline-line"></div>
+                <div class="space-y-8 pl-8 relative pb-6">
+                    
+                    <!-- STOP 1: ORVIETO -->
+                    <div class="timeline-card bg-white rounded-2xl relative">
+                        <span class="absolute -left-[40px] top-4 h-5 w-5 rounded-full bg-blue-500 ring-4 ring-slate-50 flex items-center justify-center shadow-md">
+                            <span class="h-2 w-2 bg-white rounded-full"></span>
+                        </span>
+                        <div class="image-container">
+                            <img src="https://images.unsplash.com/photo-1692257919985-78e72fb89a9c?auto=format&fit=crop&w=600&q=80" onerror="this.src='https://placehold.co/600x400/2563eb/FFF?text=Orvieto'" alt="Orvieto">
+                            <div class="absolute bottom-0 left-0 w-full bg-gradient-to-t from-black/80 to-transparent p-4">
+                                <span class="text-[10px] font-bold text-white uppercase tracking-widest bg-blue-600/90 px-2 py-1 rounded-md backdrop-blur-sm">Mo., 13. Juli • 1 Nacht</span>
+                                <h3 class="font-heading font-bold text-white text-xl mt-1">1. Stopp: Orvieto</h3>
+                            </div>
+                        </div>
+                        <div class="p-4">
+                            <div class="bg-blue-50/50 p-2 rounded-lg border border-blue-100 flex justify-between items-center text-xs text-blue-800 mb-3 shadow-inner">
+                                <span title="Abfahrt"><i class="fa-solid fa-car"></i> <b>06:00</b> Sissach</span>
+                                <i class="fa-solid fa-arrow-right text-[10px] opacity-50"></i>
+                                <span title="Ankunft"><i class="fa-solid fa-flag-checkered"></i> <b>~13:30</b> Orvieto</span>
+                            </div>
+
+                            <div class="flex justify-between items-start mb-2">
+                                <div>
+                                    <p class="text-sm font-semibold text-gray-800"><i class="fa-solid fa-bed text-blue-500 w-5"></i> B&B La Casa Di Tufo</p>
+                                    <p class="text-[11px] text-gray-500"><i class="fa-solid fa-location-dot w-4"></i> Via Del Paradiso 11, Orvieto</p>
+                                </div>
+                                <a href="https://maps.google.com/?q=Via+Del+Paradiso+11+Orvieto" target="_blank" class="bg-slate-100 p-2 rounded-lg text-blue-600 active:bg-slate-200">
+                                    <i class="fa-solid fa-map-location-dot"></i>
+                                </a>
+                            </div>
+                            
+                            <div class="grid grid-cols-2 gap-2 mb-3">
+                                <div class="bg-blue-50/50 rounded-lg p-2 border border-slate-200">
+                                    <p class="text-[10px] text-gray-500 uppercase">Zugangs-PIN</p>
+                                    <p class="font-mono font-bold text-blue-900 text-lg">1296</p>
+                                </div>
+                                <div class="bg-slate-50 rounded-lg p-2 border border-slate-200">
+                                    <p class="text-[10px] text-gray-500 uppercase">Buchungs-Ref</p>
+                                    <p class="font-mono font-bold text-gray-900 text-xs mt-1">5901798677</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="timeline-card bg-white rounded-2xl relative">
+                        <span class="absolute -left-[40px] top-4 h-5 w-5 rounded-full bg-red-500 ring-4 ring-slate-50 flex items-center justify-center shadow-md">
+                            <span class="h-2 w-2 bg-white rounded-full"></span>
+                        </span>
+                        <div class="image-container">
+                            <img src="https://images.unsplash.com/photo-1552832230-c0197dd311b5?auto=format&fit=crop&w=600&q=80" onerror="this.src='https://placehold.co/600x400/ef4444/FFF?text=Rom'" alt="Rome">
+                            <div class="absolute bottom-0 left-0 w-full bg-gradient-to-t from-black/80 to-transparent p-4">
+                                <span class="text-[10px] font-bold text-white uppercase tracking-widest bg-red-600/90 px-2 py-1 rounded-md backdrop-blur-sm">Di., 14. - Do., 16. Juli • 2 Nächte</span>
+                                <h3 class="font-heading font-bold text-white text-xl mt-1">2. Stopp: Rom</h3>
+                            </div>
+                        </div>
+                        <div class="p-4">
+                            <div class="bg-red-50/50 p-2 rounded-lg border border-red-100 flex justify-between items-center text-xs text-red-800 mb-3 shadow-inner">
+                                <span title="Abfahrt"><i class="fa-solid fa-car"></i> <b>10:00</b> Orvieto</span>
+                                <i class="fa-solid fa-arrow-right text-[10px] opacity-50"></i>
+                                <span title="Ankunft"><i class="fa-solid fa-flag-checkered"></i> <b>~11:45</b> Rom Apts.</span>
+                            </div>
+
+                            <div class="flex justify-between items-start mb-2">
+                                <div>
+                                    <p class="text-sm font-semibold text-gray-800"><i class="fa-solid fa-key text-red-500 w-5"></i> Aurelia Vatican Apts.</p>
+                                    <p class="text-[11px] text-gray-500"><i class="fa-solid fa-location-dot w-4"></i> Via Dei Laterizi 20, Rom</p>
+                                </div>
+                                <a href="https://maps.google.com/?q=Via+Dei+Laterizi+20+Rome" target="_blank" class="bg-slate-100 p-2 rounded-lg text-red-600 active:bg-slate-200">
+                                    <i class="fa-solid fa-map-location-dot"></i>
+                                </a>
+                            </div>
+                            
+                            <div class="grid grid-cols-2 gap-2 mb-3">
+                                <div class="bg-red-50/50 rounded-lg p-2 border border-slate-200">
+                                    <p class="text-[10px] text-gray-500 uppercase">Zugangs-PIN</p>
+                                    <p class="font-mono font-bold text-red-900 text-lg">2875</p>
+                                </div>
+                                <div class="bg-slate-50 rounded-lg p-2 border border-slate-200">
+                                    <p class="text-[10px] text-gray-500 uppercase">Buchungs-Ref</p>
+                                    <p class="font-mono font-bold text-gray-900 text-xs mt-1">6306658109</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="timeline-card bg-white rounded-2xl relative">
+                        <span class="absolute -left-[40px] top-4 h-5 w-5 rounded-full bg-yellow-500 ring-4 ring-slate-50 flex items-center justify-center shadow-md">
+                            <span class="h-2 w-2 bg-white rounded-full"></span>
+                        </span>
+                        <div class="image-container">
+                            <img src="https://images.unsplash.com/photo-1590059345224-d9ee787e9142?auto=format&fit=crop&w=600&q=80" onerror="this.src='https://placehold.co/600x400/eab308/FFF?text=Salento'" alt="Apulia Beach">
+                            <div class="absolute bottom-0 left-0 w-full bg-gradient-to-t from-black/80 to-transparent p-4">
+                                <span class="text-[10px] font-bold text-white uppercase tracking-widest bg-yellow-600/90 px-2 py-1 rounded-md backdrop-blur-sm">Do., 16. - Di., 21. Juli • 5 Nächte</span>
+                                <h3 class="font-heading font-bold text-white text-xl mt-1">3. Salento Strand</h3>
+                            </div>
+                        </div>
+                        <div class="p-4">
+                            <div class="bg-yellow-50/50 p-2 rounded-lg border border-yellow-100 flex justify-between items-center text-xs text-yellow-800 mb-3 shadow-inner">
+                                <span title="Abfahrt"><i class="fa-solid fa-car"></i> <b>09:00</b> Rom</span>
+                                <i class="fa-solid fa-arrow-right text-[10px] opacity-50"></i>
+                                <span title="Ankunft"><i class="fa-solid fa-flag-checkered"></i> <b>~16:00</b> Salento</span>
+                            </div>
+
+                            <div class="flex justify-between items-start mb-2">
+                                <div>
+                                    <p class="text-sm font-semibold text-gray-800"><i class="fa-solid fa-building text-yellow-500 w-5"></i> Smeraldo Residence</p>
+                                    <p class="text-[11px] text-gray-500"><i class="fa-solid fa-location-dot w-4"></i> Via O. Nelson 21, Torre San Giovanni</p>
+                                </div>
+                                <a href="https://maps.google.com/?q=Via+O.+Nelson+21+Torre+San+Giovanni+Lecce" target="_blank" class="bg-slate-100 p-2 rounded-lg text-yellow-600 active:bg-slate-200">
+                                    <i class="fa-solid fa-map-location-dot"></i>
+                                </a>
+                            </div>
+                            
+                            <div class="bg-red-100 border-l-4 border-red-600 p-2 mb-3 rounded-r flex items-center justify-between shadow-sm">
+                                <div>
+                                    <p class="text-xs font-extrabold text-red-900"><i class="fa-solid fa-money-bill-wave"></i> ACHTUNG KAUTION</p>
+                                    <p class="text-[10px] text-red-800 mt-0.5">Exakt <b>200€ in BAR</b> beim Check-in bereithalten!</p>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-2 mb-3">
+                                <div class="bg-yellow-50/50 rounded-lg p-2 border border-slate-200">
+                                    <p class="text-[10px] text-gray-500 uppercase">Zugangs-PIN</p>
+                                    <p class="font-mono font-bold text-yellow-900 text-lg">3134</p>
+                                </div>
+                                <div class="bg-slate-50 rounded-lg p-2 border border-slate-200">
+                                    <p class="text-[10px] text-gray-500 uppercase">Buchungs-Ref</p>
+                                    <p class="font-mono font-bold text-gray-900 text-xs mt-1">5761221614</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="timeline-card bg-white rounded-2xl relative">
+                        <span class="absolute -left-[40px] top-4 h-5 w-5 rounded-full bg-green-500 ring-4 ring-slate-50 flex items-center justify-center shadow-md">
+                            <span class="h-2 w-2 bg-white rounded-full"></span>
+                        </span>
+                        <div class="image-container h-32">
+                            <img src="https://images.unsplash.com/photo-1520625447721-a3f2d29525c3?auto=format&fit=crop&w=600&q=80" onerror="this.src='https://placehold.co/600x400/22c55e/FFF?text=Berge'" alt="Lamon Mountains">
+                            <div class="absolute bottom-0 left-0 w-full bg-gradient-to-t from-black/80 to-transparent p-4">
+                                <span class="text-[10px] font-bold text-white uppercase tracking-widest bg-green-600/90 px-2 py-1 rounded-md backdrop-blur-sm">Di., 21. - Do., 23. Juli • 2 Nächte</span>
+                                <h3 class="font-heading font-bold text-white text-xl mt-1">4. Lamon (Nonna)</h3>
+                            </div>
+                        </div>
+                        <div class="p-4">
+                            <div class="bg-slate-800 rounded-xl p-3 border border-slate-700 text-white shadow-md">
+                                <h4 class="font-bold text-white text-xs flex items-center gap-1 mb-2"><i class="fa-solid fa-triangle-exclamation text-red-400"></i> Die 10h Mammut-Etappe</h4>
+                                <p class="text-[11px] text-slate-300 leading-snug">Rund 950 km Fahrt! <b>Tipp: Startet zwingend um 04:00 Uhr morgens!</b></p>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+        <section id="tab-diary" class="tab-content px-4 pt-4 pb-10 h-full flex flex-col">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="font-heading text-2xl font-bold text-slate-900">Reise-Tagebuch</h2>
+                <button onclick="app.toggleTracking()" id="track-btn" class="bg-slate-200 text-slate-700 text-[10px] font-bold px-3 py-1.5 rounded-full shadow-sm flex items-center gap-1 transition">
+                    <i class="fa-solid fa-location-arrow"></i> Tracking Aus
+                </button>
+            </div>
+
+            <!-- Map Container -->
+            <div class="bg-white p-1 rounded-xl shadow-sm border border-slate-200 mb-4">
+                <div id="trip-map" style="height: 180px; width: 100%; border-radius: 8px; z-index: 1;"></div>
+            </div>
+
+            <!-- Add Entry -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 mb-4">
+                <textarea id="diary-text" rows="2" placeholder="Was erlebt ihr gerade, Diego & Gabriela?" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs outline-none focus:border-blue-500 mb-2 resize-none"></textarea>
+                <div class="flex gap-2">
+                    <input type="text" id="diary-img" placeholder="Bild-URL (optional)" class="flex-1 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 text-xs outline-none focus:border-blue-500">
+                    <button onclick="app.addDiaryEntry()" class="bg-blue-600 text-white font-bold px-4 py-1.5 rounded-lg text-xs active:scale-95 transition">Posten</button>
+                </div>
+            </div>
+
+            <!-- Feed -->
+            <div id="diary-feed" class="space-y-4 flex-1 overflow-y-auto"></div>
+        </section>
+
+        <section id="tab-checklist" class="tab-content px-4 pt-4 pb-10">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="font-heading text-2xl font-bold text-slate-900">Orga & Kasse</h2>
+                <div class="flex gap-1 bg-slate-200 p-1 rounded-lg">
+                    <button onclick="app.toggleChecklistMode('pack')" id="mode-pack-btn" class="text-[10px] font-bold px-3 py-1.5 rounded bg-white shadow-sm text-blue-600">Packen</button>
+                    <button onclick="app.toggleChecklistMode('budget')" id="mode-budget-btn" class="text-[10px] font-bold px-3 py-1.5 rounded text-slate-500">Ausgaben</button>
+                </div>
+            </div>
+
+            <!-- PACKING MODE -->
+            <div id="mode-pack">
+                <div class="bg-gradient-to-r from-slate-900 via-slate-800 to-blue-950 rounded-2xl p-4 shadow-md mb-6 text-white border border-blue-900/40">
+                    <h3 class="font-bold text-white mb-2 pb-2 border-b border-slate-700 flex items-center justify-between">
+                        <span><i class="fa-solid fa-truck-ramp-box text-blue-400"></i> RAV4 Lade-Strategie</span>
+                        <span class="text-[9px] bg-blue-600 px-2 py-1 rounded font-mono">Hybrid</span>
+                    </h3>
+                    <div class="text-[11px] space-y-2 text-slate-200 mt-3">
+                        <p><i class="fa-solid fa-battery-half text-green-400 mr-1 w-4"></i> <b>Batterie-Lüftung:</b> Die Hybrid-Batterie liegt hinten. Seitliche Lüftungsschlitze der Rückbank NICHT blockieren!</p>
+                        <p><i class="fa-solid fa-suitcase text-yellow-400 mr-1 w-4"></i> <b>"1-Nacht-Tasche":</b> Packt eine separate Tasche NUR für Orvieto. Legt sie als ALLERLETZTES GANZ OBEN auf!</p>
+                    </div>
+                </div>
+
+                <div class="flex justify-between items-end mb-2">
+                    <p class="text-sm font-bold text-slate-700" id="progress-text">0/0 erledigt</p>
+                    <button onclick="app.resetChecklist()" class="text-[10px] text-slate-500 font-bold bg-slate-200 px-2 py-1 rounded hover:bg-slate-300">Reset Liste</button>
+                </div>
+                
+                <div class="w-full bg-slate-200 rounded-full h-2 mb-6">
+                    <div id="progress-bar" class="bg-blue-600 h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
+                </div>
+
+                <div id="checklist-container" class="space-y-4 pb-6"></div>
+            </div>
+
+            <!-- BUDGET MODE -->
+            <div id="mode-budget" class="hidden">
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 mb-4">
+                    <h3 class="font-bold text-slate-800 text-sm mb-3">Reisekasse hinzufügen</h3>
+                    <div class="flex gap-2 mb-3">
+                        <input type="text" id="expense-desc" placeholder="Wofür? (z.B. Gelato)" class="flex-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs outline-none focus:border-blue-500">
+                        <input type="number" id="expense-amount" placeholder="€ Betrag" class="w-24 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs outline-none focus:border-blue-500">
+                    </div>
+                    <button onclick="app.addExpense()" class="w-full bg-blue-600 text-white font-bold py-2 rounded-lg text-xs active:bg-blue-700 transition"><i class="fa-solid fa-plus mr-1"></i> Ausgabe speichern</button>
+                </div>
+
+                <div class="bg-slate-800 text-white rounded-2xl p-4 shadow-sm mb-4 flex justify-between items-center">
+                    <span class="text-sm font-medium text-slate-300">Gesamtausgaben:</span>
+                    <span class="text-xl font-bold text-green-400" id="expense-total">€ 0.00</span>
+                </div>
+
+                <div id="expense-list" class="space-y-2 pb-6"></div>
+                <button onclick="app.clearExpenses()" class="w-full mt-4 text-[10px] text-slate-400 font-bold underline">Alle Ausgaben löschen</button>
+            </div>
+        </section>
+
+        <section id="tab-hacks" class="tab-content px-4 pt-4">
+            <h2 class="font-heading text-2xl font-bold text-slate-900 mb-4">Italien Survival Hacks</h2>
+            
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-4">
+                <div class="bg-blue-500 px-4 py-3 text-white flex items-center gap-2">
+                    <i class="fa-solid fa-droplet text-xl"></i>
+                    <h3 class="font-bold text-base leading-none">Nasoni: Gratis Wasser (Rom)</h3>
+                </div>
+                <div class="p-4 text-xs text-slate-600 space-y-3">
+                    <p>Kauft in Rom kein teures Wasser! Es gibt über 2.500 gusseiserne Trinkbrunnen (Nasoni). Loch unten zuhalten, dann spritzt es oben aus dem kleinen Loch.</p>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-4">
+                <div class="bg-yellow-400 px-4 py-3 text-slate-900 flex items-center gap-2">
+                    <i class="fa-solid fa-cash-register text-xl"></i>
+                    <h3 class="font-bold text-base leading-none">Maut1.de VIP-Spur</h3>
+                </div>
+                <div class="p-4 text-xs text-slate-600 space-y-3">
+                    <p>Maut1-Box an die Frontscheibe kleben. Fahrt mit max. 30 km/h an die Schranke auf <b>NUR GELBEN SPUREN (Telepass)</b>. Box piept, Schranke öffnet. Kein Ticket ziehen!</p>
+                </div>
+            </div>
+
+            <div class="bg-red-50 rounded-2xl border border-red-200 overflow-hidden mb-4">
+                <div class="p-4">
+                    <h3 class="font-bold text-red-900 mb-3 flex items-center gap-2"><i class="fa-solid fa-truck-medical"></i> Notfall & Apotheke</h3>
+                    <div class="flex gap-2 mb-3">
+                        <a href="tel:112" class="bg-white border border-red-100 p-2 rounded-xl text-center w-1/2 shadow-sm"><span class="font-bold text-red-600 block text-lg">112</span><span class="text-[9px] text-slate-500">Notruf</span></a>
+                        <a href="tel:803116" class="bg-white border border-red-100 p-2 rounded-xl text-center w-1/2 shadow-sm"><span class="font-bold text-blue-600 block text-lg">803116</span><span class="text-[9px] text-slate-500">ACI Pannenhilfe</span></a>
+                    </div>
+                    
+                    <div class="bg-white p-3 rounded-lg border border-red-100 text-[11px] text-slate-700 space-y-2 font-medium">
+                        <div class="flex justify-between items-center border-b pb-1">
+                            <div><span>Kind hat Fieber</span> <br><i class="text-slate-500">"Mio figlio ha la febbre"</i></div>
+                            <button onclick="app.speak('Mio figlio ha la febbre')" class="speech-btn text-red-600 text-lg"><i class="fa-solid fa-volume-high"></i></button>
+                        </div>
+                        <div class="flex justify-between items-center border-b pb-1">
+                            <div><span>Quallenstich</span> <br><i class="text-slate-500">"Puntura di medusa"</i></div>
+                            <button onclick="app.speak('Puntura di medusa')" class="speech-btn text-red-600 text-lg"><i class="fa-solid fa-volume-high"></i></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="tab-spiele" class="tab-content px-4 pt-4">
+            <h2 class="font-heading text-2xl font-bold text-slate-900 mb-2">Spiele-Center 🎲</h2>
+            
+            <div class="flex bg-slate-200 p-1 rounded-xl mb-4 text-[10px] font-bold overflow-x-auto scrollbar-hide snap-x">
+                <button onclick="app.switchGame('game-bingo', this)" class="game-btn shrink-0 px-3 bg-white shadow-sm rounded-lg py-2 text-blue-600">Auto-Bingo</button>
+                <button onclick="app.switchGame('game-tricolore', this)" class="game-btn shrink-0 px-3 rounded-lg py-2 text-slate-500">Tricolore Zähler</button>
+                <button onclick="app.switchGame('game-gelato', this)" class="game-btn shrink-0 px-3 rounded-lg py-2 text-slate-500">Gelato-Tracker</button>
+            </div>
+            
+            <!-- GAME 1: BINGO -->
+            <div id="game-bingo" class="game-view block">
+                <div class="grid grid-cols-3 gap-2 pb-4">
+                    <div class="bingo-item bg-white rounded-xl shadow-sm border border-slate-200 p-2 flex flex-col items-center justify-center text-center cursor-pointer aspect-square transition" onclick="app.toggleBingo(this)"><span class="text-3xl mb-1">🚓</span><span class="text-[9px] font-bold text-slate-700">Polizia</span></div>
+                    <div class="bingo-item bg-white rounded-xl shadow-sm border border-slate-200 p-2 flex flex-col items-center justify-center text-center cursor-pointer aspect-square transition" onclick="app.toggleBingo(this)"><span class="text-3xl mb-1">🛵</span><span class="text-[9px] font-bold text-slate-700">Vespa</span></div>
+                    <div class="bingo-item bg-white rounded-xl shadow-sm border border-slate-200 p-2 flex flex-col items-center justify-center text-center cursor-pointer aspect-square transition" onclick="app.toggleBingo(this)"><span class="text-3xl mb-1">☕</span><span class="text-[9px] font-bold text-slate-700">Autogrill</span></div>
+                    <div class="bingo-item bg-white rounded-xl shadow-sm border border-slate-200 p-2 flex flex-col items-center justify-center text-center cursor-pointer aspect-square transition" onclick="app.toggleBingo(this)"><span class="text-3xl mb-1">🌲</span><span class="text-[9px] font-bold text-slate-700">Zypresse</span></div>
+                    <div class="bingo-item bg-white rounded-xl shadow-sm border border-slate-200 p-2 flex flex-col items-center justify-center text-center cursor-pointer aspect-square transition" onclick="app.toggleBingo(this)"><span class="text-3xl mb-1">🛺</span><span class="text-[9px] font-bold text-slate-700">Ape (Dreirad)</span></div>
+                    <div class="bingo-item bg-white rounded-xl shadow-sm border border-slate-200 p-2 flex flex-col items-center justify-center text-center cursor-pointer aspect-square transition" onclick="app.toggleBingo(this)"><span class="text-3xl mb-1">🇨🇭</span><span class="text-[9px] font-bold text-slate-700">CH-Auto</span></div>
+                </div>
+                <button onclick="app.resetBingo()" class="w-full bg-slate-200 text-slate-700 rounded-xl py-3 text-xs font-bold active:bg-slate-300 transition shadow-sm">Bingo neu starten</button>
+            </div>
+
+            <!-- GAME 2: TRICOLORE -->
+            <div id="game-tricolore" class="game-view hidden">
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 text-center">
+                    <h3 class="font-bold text-sm mb-2">Tricolore Auto-Zähler 🇮🇹</h3>
+                    <div class="space-y-3 mt-4">
+                        <div class="flex items-center justify-between bg-green-50 p-2 rounded-lg border border-green-200">
+                            <div class="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center text-white"><i class="fa-solid fa-car"></i></div>
+                            <span class="font-mono font-bold text-green-700 text-xl w-8 text-center" id="count-green">0</span>
+                            <button onclick="app.updateTricolore('green')" class="w-10 h-10 rounded-full bg-green-200 text-green-700 font-bold active:bg-green-300 shadow-sm"><i class="fa-solid fa-plus"></i></button>
+                        </div>
+                        <div class="flex items-center justify-between bg-slate-50 p-2 rounded-lg border border-slate-200">
+                            <div class="w-8 h-8 bg-white border border-slate-300 rounded-full flex items-center justify-center text-slate-600"><i class="fa-solid fa-car"></i></div>
+                            <span class="font-mono font-bold text-slate-700 text-xl w-8 text-center" id="count-white">0</span>
+                            <button onclick="app.updateTricolore('white')" class="w-10 h-10 rounded-full bg-slate-200 text-slate-700 font-bold active:bg-slate-300 shadow-sm"><i class="fa-solid fa-plus"></i></button>
+                        </div>
+                        <div class="flex items-center justify-between bg-red-50 p-2 rounded-lg border border-red-200">
+                            <div class="w-8 h-8 bg-red-600 rounded-full flex items-center justify-center text-white"><i class="fa-solid fa-car"></i></div>
+                            <span class="font-mono font-bold text-red-700 text-xl w-8 text-center" id="count-red">0</span>
+                            <button onclick="app.updateTricolore('red')" class="w-10 h-10 rounded-full bg-red-200 text-red-700 font-bold active:bg-red-300 shadow-sm"><i class="fa-solid fa-plus"></i></button>
+                        </div>
+                    </div>
+                    <button onclick="app.resetTricolore()" class="w-full mt-4 text-[10px] text-slate-400 font-bold underline">Zähler zurücksetzen</button>
+                </div>
+            </div>
+
+            <!-- GAME 3: GELATO -->
+            <div id="game-gelato" class="game-view hidden">
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+                    <h3 class="font-bold text-sm text-center mb-4">Wer isst am meisten Eis? 🍦</h3>
+                    <div class="space-y-4" id="gelato-list"></div>
+                </div>
+            </div>
+        </section>
+
+        <section id="tab-bot" class="tab-content h-full flex flex-col px-4 pt-4">
+            <div class="bg-gradient-to-br from-indigo-700 via-blue-600 to-blue-800 rounded-2xl p-4 text-white shadow-md mb-2 shrink-0 relative overflow-hidden">
+                <div class="absolute -right-2 -bottom-4 text-6xl opacity-20"><i class="fa-solid fa-brain"></i></div>
+                <h2 class="font-heading text-lg font-bold flex items-center gap-2">Luigi AI 4.0</h2>
+                <p class="text-[11px] text-blue-100 mt-1 leading-snug">Frag mich was! Zum Beispiel zu "Rom gratis", "Packen" oder "Wasser"!</p>
+                
+                <div class="flex gap-2 mt-3 overflow-x-auto pb-2 scrollbar-hide snap-x">
+                    <button onclick="app.setChatInput('Was ist in Rom gratis?')" class="snap-start shrink-0 bg-white/20 px-3 py-1.5 rounded-full text-[10px] font-semibold border border-white/10 active:bg-white/30">Rom Gratis</button>
+                    <button onclick="app.setChatInput('Erzähl einen Witz')" class="snap-start shrink-0 bg-white/20 px-3 py-1.5 rounded-full text-[10px] font-semibold border border-white/10 active:bg-white/30">Witz</button>
+                </div>
+            </div>
+
+            <div id="chat-container" class="flex-1 overflow-y-auto space-y-3 pb-4">
+                <div class="flex items-end gap-2">
+                    <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center shrink-0 border border-blue-200">
+                        <span class="text-sm">🤖</span>
+                    </div>
+                    <div class="chat-bubble-bot p-3 text-[11px] text-slate-700 max-w-[85%] leading-relaxed">
+                        Pronti? Ich kenne die besten Strände und gratis Tricks. Frag mich aus! (Ich kann auch sprechen 🗣️)
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-2 bg-white rounded-full border border-slate-300 p-1 flex items-center shadow-sm">
+                <input type="text" id="chat-input" placeholder="Frag Luigi etwas..." class="flex-1 bg-transparent px-3 py-2 text-xs outline-none" onkeypress="if(event.key === 'Enter') app.handleChatSubmit()">
+                <button onclick="app.handleChatSubmit()" class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white shrink-0 active:scale-95 transition">
+                    <i class="fa-solid fa-paper-plane text-xs"></i>
+                </button>
+            </div>
+            <div class="h-6"></div>
+        </section>
+
+    </main>
+
+    <nav class="glass-nav absolute bottom-0 w-full flex justify-around px-1 py-3 z-50">
+        <button onclick="app.switchTab('tab-route', this)" class="nav-item active flex flex-col items-center w-1/6 group">
+            <i class="fa-solid fa-route text-xl mb-1 group-active:scale-90 transition"></i><span class="text-[9px] font-bold">Route</span>
+        </button>
+        <button onclick="app.switchTab('tab-diary', this)" class="nav-item flex flex-col items-center w-1/6 group">
+            <i class="fa-solid fa-book-open text-xl mb-1 group-active:scale-90 transition"></i><span class="text-[9px] font-bold">Tagebuch</span>
+        </button>
+        <button onclick="app.switchTab('tab-checklist', this)" class="nav-item flex flex-col items-center w-1/6 group">
+            <i class="fa-solid fa-wallet text-xl mb-1 group-active:scale-90 transition"></i><span class="text-[9px] font-bold">Orga</span>
+        </button>
+        <button onclick="app.switchTab('tab-hacks', this)" class="nav-item flex flex-col items-center w-1/6 group">
+            <i class="fa-solid fa-lightbulb text-xl mb-1 group-active:scale-90 transition"></i><span class="text-[9px] font-bold">Hacks</span>
+        </button>
+        <button onclick="app.switchTab('tab-spiele', this)" class="nav-item flex flex-col items-center w-1/6 group relative">
+            <span class="absolute -top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+            <i class="fa-solid fa-gamepad text-xl mb-1 group-active:scale-90 transition"></i><span class="text-[9px] font-bold">Spiele</span>
+        </button>
+        <button onclick="app.switchTab('tab-bot', this)" class="nav-item flex flex-col items-center w-1/6 group">
+            <i class="fa-solid fa-brain text-xl mb-1 text-indigo-500 group-active:scale-90 transition"></i><span class="text-[9px] font-bold text-indigo-600">Luigi AI</span>
+        </button>
+    </nav>
+
+</div>
+
+<script>
+    const app = {
+        // --- DATA ---
+        checklistData: {
+            "🎒 Die 1-Nacht Tasche (Orvieto)": [
+                { id: "ov1", text: "4x Zahnbürste & Necessaire" },
+                { id: "ov2", text: "4x Schlafanzüge (Pyjamas)" }
+            ],
+            "🚗 RAV4 & Technik": [
+                { id: "c1", text: "Maut1-Box VORHER hinter Rückspiegel kleben" },
+                { id: "c2", text: "Kühlbox hinter Beifahrersitz platzieren" }
+            ],
+            "💶 Dokumente & Finanzen": [
+                { id: "c7", text: "200€ Bargeld für Kaution Apulien abheben!" }
+            ]
+        },
+        checklistState: JSON.parse(localStorage.getItem('bellaItaliaProMax5')) || {},
+        expenses: JSON.parse(localStorage.getItem('bellaItaliaExpenses')) || [],
+        tricoloreState: JSON.parse(localStorage.getItem('bellaItaliaTricolore')) || { green: 0, white: 0, red: 0 },
+        diaryEntries: JSON.parse(localStorage.getItem('bellaItaliaDiary')) || [],
+        
+        gelatoFamily: [
+            { id: "diego", name: "Diego", icon: "👨" },
+            { id: "gabriela", name: "Gabriela", icon: "👩" },
+            { id: "miguel", name: "Miguel (11)", icon: "👦" },
+            { id: "valentina", name: "Valentina (5)", icon: "👧" }
+        ],
+        gelatoCounts: JSON.parse(localStorage.getItem('bellaItaliaGelato')) || { diego: 0, gabriela: 0, miguel: 0, valentina: 0 },
+
+        botLogic: [
+            { keywords: ["maut", "box", "piept", "fehler"], response: "<b>Maut1-Box piept nicht?</b> 1. Niemals rückwärts fahren! 2. Roter SOS-Knopf. 3. Sagt: <i>'Il mio Telepass non funziona'</i>. 4. Schranke öffnet sich." },
+            { keywords: ["rom", "gratis", "kostenlos"], response: "<b>Rom Gratis-Hacks:</b> Spart euch teure Tickets! Das <b>Pantheon</b> ist extrem beeindruckend. Der <b>Trevi-Brunnen</b> ist gratis. Tipp: Geht um 07:30 Uhr morgens zum Trevi-Brunnen!" },
+            { keywords: ["kaution", "geld"], response: "Ganz wichtig: Die Smeraldo Residence in Apulien verlangt beim Check-In am 16.07. exakt <b>200 Euro in BAR</b> als Kaution." },
+            { keywords: ["wasser", "trinken", "nasoni"], response: "<b>Gratis Wasser (Nasoni):</b> In Rom müsst ihr kein Wasser kaufen! Nutzt die kleinen gusseisernen Brunnen (Nasoni)." }
+        ],
+
+        liveNotifications: [
+            "🚨 <b>Orvieto:</b> Parkplatz Foro Boario ansteuern! PIN B&B ist 1296.",
+            "⛽ <b>Tanken:</b> Autobahn vermeiden! Sucht eine Säule mit 'Fai da te'!",
+            "🏛️ <b>Rom:</b> RAV4 stehen lassen! Metro 'Valle Aurelia' nutzen.",
+            "🏖️ <b>Apulien Check-in:</b> 200€ BAR-Kaution bereithalten!"
+        ],
+        notifIndex: 0,
+        mapInitialized: false,
+        trackingActive: false,
+
+        // --- CORE METHODS ---
+        init: function() {
+            this.renderChecklist();
+            this.renderExpenses();
+            this.renderTricolore();
+            this.renderGelato();
+            this.renderDiaryFeed();
+            
+            if (!('speechSynthesis' in window)) {
+                document.querySelectorAll('.speech-btn').forEach(btn => btn.style.display = 'none');
+            }
+
+            // PWA Service Worker Registration
+            if ('serviceWorker' in navigator) {
+                window.addEventListener('load', () => {
+                    navigator.serviceWorker.register('./sw.js').then(registration => {
+                        console.log('SW registered: ', registration);
+                    }).catch(registrationError => {
+                        console.log('SW registration failed: ', registrationError);
+                    });
+                });
+            }
+        },
+
+        showToast: function(message) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = 'toast flex items-start gap-3 bg-white p-3 rounded-lg shadow-lg border-l-4 border-blue-500 mb-2 pointer-events-auto';
+            toast.innerHTML = `<div class="mt-0.5 text-blue-500"><i class="fa-solid fa-circle-info"></i></div><div class="text-xs text-slate-700 font-medium">${message}</div>`;
+            container.appendChild(toast);
+            setTimeout(() => { if(container.contains(toast)) container.removeChild(toast); }, 4000);
+        },
+
+        switchTab: function(tabId, btnElement) {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
+            btnElement.classList.add('active');
+            document.getElementById('main-scroll').scrollTo(0,0);
+
+            if(tabId === 'tab-diary') {
+                setTimeout(() => {
+                    this.initMap();
+                }, 100);
+            }
+        },
+
+        switchGame: function(gameId, btnElement) {
+            document.querySelectorAll('.game-view').forEach(v => { v.classList.remove('block'); v.classList.add('hidden'); });
+            document.getElementById(gameId).classList.remove('hidden');
+            document.getElementById(gameId).classList.add('block');
+            document.querySelectorAll('.game-btn').forEach(btn => { btn.classList.remove('bg-white', 'shadow-sm', 'text-blue-600'); btn.classList.add('text-slate-500'); });
+            btnElement.classList.add('bg-white', 'shadow-sm', 'text-blue-600');
+            btnElement.classList.remove('text-slate-500');
+        },
+
+        triggerLiveNotification: function() {
+            const msg = this.liveNotifications[this.notifIndex];
+            this.notifIndex = (this.notifIndex + 1) % this.liveNotifications.length;
+            this.showToast(msg);
+        },
+
+        speak: function(text) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'it-IT';
+                utterance.rate = 0.9;
+                window.speechSynthesis.speak(utterance);
+            }
+        },
+
+        initMap: function() {
+            if(this.mapInitialized || typeof L === 'undefined') return;
+            this.mapInitialized = true;
+            
+            try {
+                this.map = L.map('trip-map').setView([41.9028, 12.4964], 5);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© OpenStreetMap'
+                }).addTo(this.map);
+
+                const routeCoords = [
+                    [47.4667, 7.8167], // Sissach
+                    [42.7174, 12.1116], // Orvieto
+                    [41.9028, 12.4964], // Rome
+                    [39.8885, 18.1130], // Salento
+                    [46.0463, 11.7460] // Lamon
+                ];
+                
+                L.polyline(routeCoords, {color: '#2563eb', weight: 4}).addTo(this.map);
+                
+                // Add markers
+                L.marker([47.4667, 7.8167]).addTo(this.map).bindPopup("Start: Sissach");
+                L.marker([42.7174, 12.1116]).addTo(this.map).bindPopup("Stopp 1: Orvieto");
+                L.marker([41.9028, 12.4964]).addTo(this.map).bindPopup("Stopp 2: Rom");
+                L.marker([39.8885, 18.1130]).addTo(this.map).bindPopup("Stopp 3: Salento");
+                L.marker([46.0463, 11.7460]).addTo(this.map).bindPopup("Stopp 4: Lamon");
+                
+                this.map.fitBounds(L.polyline(routeCoords).getBounds());
+            } catch (e) {
+                console.log("Map initialization skipped or failed.", e);
+            }
+        },
+
+        toggleTracking: function() {
+            this.trackingActive = !this.trackingActive;
+            const btn = document.getElementById('track-btn');
+            if(this.trackingActive) {
+                btn.innerHTML = '<i class="fa-solid fa-location-arrow text-green-500"></i> Tracking Aktiv';
+                btn.classList.add('bg-green-50', 'border', 'border-green-200');
+                this.showToast("GPS Live-Tracking aktiviert! Familie sieht nun euren Standort.");
+            } else {
+                btn.innerHTML = '<i class="fa-solid fa-location-arrow"></i> Tracking Aus';
+                btn.classList.remove('bg-green-50', 'border', 'border-green-200');
+            }
+        },
+
+        addDiaryEntry: function() {
+            const textInput = document.getElementById('diary-text');
+            const imgInput = document.getElementById('diary-img');
+            const text = textInput.value.trim();
+            const imgUrl = imgInput.value.trim();
+
+            if (text !== '' || imgUrl !== '') {
+                const newEntry = {
+                    id: Date.now(),
+                    text: text,
+                    img: imgUrl,
+                    date: new Date().toLocaleString('de-CH', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
+                };
+                this.diaryEntries.unshift(newEntry); // Add to beginning
+                localStorage.setItem('bellaItaliaDiary', JSON.stringify(this.diaryEntries));
+                
+                textInput.value = '';
+                imgInput.value = '';
+                this.renderDiaryFeed();
+                this.showToast("Tagebuch-Eintrag gepostet!");
+            }
+        },
+
+        deleteDiaryEntry: function(id) {
+            this.diaryEntries = this.diaryEntries.filter(e => e.id !== id);
+            localStorage.setItem('bellaItaliaDiary', JSON.stringify(this.diaryEntries));
+            this.renderDiaryFeed();
+        },
+
+        renderDiaryFeed: function() {
+            const feed = document.getElementById('diary-feed');
+            feed.innerHTML = '';
+            
+            if(this.diaryEntries.length === 0) {
+                feed.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">Noch keine Einträge. Teilt euer erstes Erlebnis!</p>';
+                return;
+            }
+
+            this.diaryEntries.forEach(entry => {
+                const item = document.createElement('div');
+                item.className = 'bg-white p-4 rounded-2xl shadow-sm border border-slate-200';
+                
+                let imgHtml = '';
+                if(entry.img) {
+                    imgHtml = `<img src="${entry.img}" onerror="this.style.display='none'" class="w-full h-32 object-cover rounded-lg mb-3 bg-slate-100">`;
+                }
+
+                item.innerHTML = `
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-[10px] font-bold text-slate-400"><i class="fa-regular fa-clock"></i> ${entry.date}</span>
+                        <button onclick="app.deleteDiaryEntry(${entry.id})" class="text-slate-300 hover:text-red-500"><i class="fa-solid fa-trash text-[10px]"></i></button>
+                    </div>
+                    ${imgHtml}
+                    <p class="text-xs text-slate-700 leading-relaxed">${entry.text}</p>
+                `;
+                feed.appendChild(item);
+            });
+        },
+
+        toggleChecklistMode: function(mode) {
+            if(mode === 'pack') {
+                document.getElementById('mode-pack').classList.remove('hidden');
+                document.getElementById('mode-budget').classList.add('hidden');
+                document.getElementById('mode-pack-btn').classList.add('bg-white', 'shadow-sm', 'text-blue-600');
+                document.getElementById('mode-pack-btn').classList.remove('text-slate-500');
+                document.getElementById('mode-budget-btn').classList.remove('bg-white', 'shadow-sm', 'text-blue-600');
+                document.getElementById('mode-budget-btn').classList.add('text-slate-500');
+            } else {
+                document.getElementById('mode-pack').classList.add('hidden');
+                document.getElementById('mode-budget').classList.remove('hidden');
+                document.getElementById('mode-budget-btn').classList.add('bg-white', 'shadow-sm', 'text-blue-600');
+                document.getElementById('mode-budget-btn').classList.remove('text-slate-500');
+                document.getElementById('mode-pack-btn').classList.remove('bg-white', 'shadow-sm', 'text-blue-600');
+                document.getElementById('mode-pack-btn').classList.add('text-slate-500');
+            }
+        },
+
+        renderChecklist: function() {
+            const container = document.getElementById('checklist-container');
+            container.innerHTML = '';
+            let total = 0, checked = 0;
+
+            for (const [category, items] of Object.entries(this.checklistData)) {
+                const catDiv = document.createElement('div');
+                catDiv.className = 'bg-white rounded-xl p-3 shadow-sm border border-slate-200';
+                catDiv.innerHTML = `<h3 class="font-bold text-slate-800 text-[11px] mb-2 border-b border-slate-100 pb-1">${category}</h3>`;
+                const list = document.createElement('div');
+                list.className = 'space-y-2';
+
+                items.forEach(item => {
+                    total++;
+                    const isChecked = this.checklistState[item.id] || false;
+                    if (isChecked) checked++;
+
+                    const label = document.createElement('label');
+                    label.className = `check-container flex items-start gap-2 cursor-pointer group ${isChecked ? 'completed' : ''}`;
+                    label.innerHTML = `
+                        <div class="relative flex items-center mt-0.5 shrink-0">
+                            <input type="checkbox" class="sr-only" onchange="app.toggleCheck('${item.id}', this)" ${isChecked ? 'checked' : ''}>
+                            <div class="w-5 h-5 border-2 border-slate-300 rounded bg-white flex items-center justify-center">
+                                <svg class="w-3 h-3 text-white hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg>
+                            </div>
+                        </div>
+                        <span class="text-xs text-slate-700 leading-tight select-none">${item.text}</span>
+                    `;
+                    list.appendChild(label);
+                });
+                catDiv.appendChild(list);
+                container.appendChild(catDiv);
+            }
+
+            const percent = total === 0 ? 0 : Math.round((checked / total) * 100);
+            document.getElementById('progress-bar').style.width = percent + '%';
+            document.getElementById('progress-text').innerText = `${checked}/${total} erledigt`;
+        },
+
+        toggleCheck: function(id, checkbox) {
+            this.checklistState[id] = checkbox.checked;
+            localStorage.setItem('bellaItaliaProMax5', JSON.stringify(this.checklistState));
+            this.renderChecklist();
+        },
+
+        resetChecklist: function() {
+            this.checklistState = {};
+            localStorage.removeItem('bellaItaliaProMax5');
+            this.renderChecklist();
+            this.showToast("Checkliste zurückgesetzt.");
+        },
+
+        addExpense: function() {
+            const descInput = document.getElementById('expense-desc');
+            const amountInput = document.getElementById('expense-amount');
+            const desc = descInput.value.trim();
+            const amount = parseFloat(amountInput.value);
+
+            if (desc !== '' && !isNaN(amount) && amount > 0) {
+                this.expenses.push({ id: Date.now(), desc: desc, amount: amount });
+                localStorage.setItem('bellaItaliaExpenses', JSON.stringify(this.expenses));
+                descInput.value = '';
+                amountInput.value = '';
+                this.renderExpenses();
+            }
+        },
+
+        deleteExpense: function(id) {
+            this.expenses = this.expenses.filter(e => e.id !== id);
+            localStorage.setItem('bellaItaliaExpenses', JSON.stringify(this.expenses));
+            this.renderExpenses();
+        },
+
+        clearExpenses: function() {
+            this.expenses = [];
+            localStorage.removeItem('bellaItaliaExpenses');
+            this.renderExpenses();
+            this.showToast("Alle Ausgaben wurden gelöscht.");
+        },
+
+        renderExpenses: function() {
+            const list = document.getElementById('expense-list');
+            const totalEl = document.getElementById('expense-total');
+            list.innerHTML = '';
+            
+            let total = 0;
+            for (let i = this.expenses.length - 1; i >= 0; i--) {
+                const exp = this.expenses[i];
+                total += exp.amount;
+                
+                const item = document.createElement('div');
+                item.className = 'flex justify-between items-center bg-white p-3 rounded-xl border border-slate-200 shadow-sm';
+                item.innerHTML = `
+                    <span class="text-xs font-semibold text-slate-700">${exp.desc}</span>
+                    <div class="flex items-center gap-3">
+                        <span class="font-mono font-bold text-red-500 text-sm">€ ${exp.amount.toFixed(2)}</span>
+                        <button onclick="app.deleteExpense(${exp.id})" class="text-slate-400 hover:text-red-500"><i class="fa-solid fa-trash text-[10px]"></i></button>
+                    </div>
+                `;
+                list.appendChild(item);
+            }
+            
+            totalEl.innerText = `€ ${total.toFixed(2)}`;
+            if(this.expenses.length === 0) {
+                list.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">Noch keine Ausgaben eingetragen.</p>';
+            }
+        },
+
+        renderTricolore: function() {
+            document.getElementById('count-green').innerText = this.tricoloreState.green;
+            document.getElementById('count-white').innerText = this.tricoloreState.white;
+            document.getElementById('count-red').innerText = this.tricoloreState.red;
+            
+            if (this.tricoloreState.green >= 10 && this.tricoloreState.white >= 10 && this.tricoloreState.red >= 10) {
+                setTimeout(() => {
+                    this.showToast("🎉 Miguel & Valentina haben alle Tricolore-Autos gefunden! Zeit für ein Gelato!");
+                    this.resetTricolore();
+                }, 500);
+            }
+        },
+
+        updateTricolore: function(color) {
+            if (this.tricoloreState[color] < 10) {
+                this.tricoloreState[color]++;
+                localStorage.setItem('bellaItaliaTricolore', JSON.stringify(this.tricoloreState));
+                this.renderTricolore();
+            }
+        },
+
+        resetTricolore: function() {
+            this.tricoloreState = { green: 0, white: 0, red: 0 };
+            localStorage.removeItem('bellaItaliaTricolore');
+            this.renderTricolore();
+        },
+
+        toggleBingo: function(el) {
+            el.classList.toggle('bg-green-100');
+            el.classList.toggle('border-green-400');
+            el.classList.toggle('scale-95');
+        },
+
+        resetBingo: function() {
+            document.querySelectorAll('.bingo-item').forEach(el => { el.classList.remove('bg-green-100', 'border-green-400', 'scale-95'); });
+        },
+
+        renderGelato: function() {
+            const container = document.getElementById('gelato-list');
+            container.innerHTML = '';
+            this.gelatoFamily.forEach(member => {
+                const count = this.gelatoCounts[member.id];
+                container.innerHTML += `
+                    <div class="flex items-center justify-between bg-slate-50 p-2 rounded-lg border border-slate-100">
+                        <div class="flex items-center gap-2">
+                            <span class="text-xl">${member.icon}</span>
+                            <span class="text-xs font-bold text-slate-700">${member.name}</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <button onclick="app.updateGelato('${member.id}', -1)" class="w-6 h-6 rounded-full bg-slate-200 text-slate-600 font-bold active:bg-slate-300">-</button>
+                            <span class="font-mono font-bold text-blue-600 text-sm w-4 text-center">${count}</span>
+                            <button onclick="app.updateGelato('${member.id}', 1)" class="w-6 h-6 rounded-full bg-blue-100 text-blue-600 font-bold active:bg-blue-200">+</button>
+                        </div>
+                    </div>
+                `;
+            });
+        },
+
+        updateGelato: function(id, change) {
+            let count = this.gelatoCounts[id] + change;
+            if(count < 0) count = 0;
+            this.gelatoCounts[id] = count;
+            localStorage.setItem('bellaItaliaGelato', JSON.stringify(this.gelatoCounts));
+            this.renderGelato();
+        },
+
+        setChatInput: function(text) {
+            document.getElementById('chat-input').value = text;
+            this.handleChatSubmit();
+        },
+
+        handleChatSubmit: function() {
+            const inputField = document.getElementById('chat-input');
+            const text = inputField.value.trim();
+            if (text === '') return;
+            this.sendBotMessage(text);
+            inputField.value = '';
+        },
+
+        sendBotMessage: function(text) {
+            const container = document.getElementById('chat-container');
+            const mainScroll = document.getElementById('main-scroll');
+            
+            const userMsg = document.createElement('div');
+            userMsg.className = "flex items-end gap-2 justify-end";
+            userMsg.innerHTML = `<div class="chat-bubble-user p-2.5 shadow-sm text-[11px] max-w-[85%]">${text}</div>`;
+            container.appendChild(userMsg);
+            mainScroll.scrollTop = mainScroll.scrollHeight;
+
+            const typingId = 'typing-' + Date.now();
+            const typing = document.createElement('div');
+            typing.id = typingId;
+            typing.className = "flex items-end gap-2 mt-2";
+            typing.innerHTML = `
+                <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center shrink-0 border border-blue-200">
+                    <span class="text-sm">🤖</span>
+                </div>
+                <div class="chat-bubble-bot p-2.5 text-xs text-slate-500">schreibt...</div>
+            `;
+            container.appendChild(typing);
+            mainScroll.scrollTop = mainScroll.scrollHeight;
+
+            let botReply = "Scusa! Das weiss ich gerade nicht. Frag mich nach 'Rom gratis', 'Apulien', 'Packen' oder sag 'Erzähl einen Witz'.";
+            const lowerText = text.toLowerCase();
+            
+            for (let logic of this.botLogic) {
+                if (logic.keywords.some(kw => lowerText.includes(kw))) {
+                    botReply = logic.response;
+                    break;
+                }
+            }
+
+            if(lowerText.includes("witz")) {
+                botReply = "Warum stehen in Rom so viele alte Steine? ... Weil sie zu schwer zum Wegräumen waren! 🏛️😂";
+            }
+
+            const thinkDelay = Math.min(600 + (botReply.length * 10), 2000);
+
+            setTimeout(() => {
+                const typingEl = document.getElementById(typingId);
+                if (typingEl) typingEl.remove();
+                
+                const speechButtonHtml = ('speechSynthesis' in window) ? 
+                    `<button onclick="app.speak('${botReply.replace(/<[^>]*>?/gm, '').replace(/'/g, "\\'")}')" class="text-blue-500 hover:text-blue-700 ml-2" title="Vorlesen"><i class="fa-solid fa-volume-high"></i></button>` : '';
+
+                const botMsg = document.createElement('div');
+                botMsg.className = "flex items-end gap-2 mt-2";
+                botMsg.innerHTML = `
+                    <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center shrink-0 border border-blue-200">
+                        <span class="text-sm">🤖</span>
+                    </div>
+                    <div class="chat-bubble-bot p-3 shadow-sm text-[11px] text-slate-700 max-w-[85%] leading-relaxed">
+                        ${botReply} ${speechButtonHtml}
+                    </div>
+                `;
+                container.appendChild(botMsg);
+                mainScroll.scrollTop = mainScroll.scrollHeight;
+            }, thinkDelay); 
+        }
+    };
+
+    document.addEventListener("DOMContentLoaded", () => app.init());
+</script>
+</body>
+</html>
