@@ -1,0 +1,1731 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Bella Italia 2026 Maestro V10</title>
+    
+    <!-- PWA Integration -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#f8fafc">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+    <!-- Tailwind & Icons -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- Leaflet für die Karte -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&family=Inter:wght@400;500;600;700&family=Fredoka:wght@500;600;700&display=swap');
+        
+        :root { --primary: #2563eb; --bg: #f8fafc; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a; 
+            color: #1e293b;
+            -webkit-tap-highlight-color: transparent;
+            overscroll-behavior-y: none;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+        }
+
+        #app-wrapper {
+            width: 100%;
+            max-width: 480px; 
+            height: 100dvh;
+            background-color: var(--bg);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+        }
+
+        @media (min-width: 481px) {
+            body { align-items: center; }
+            #app-wrapper {
+                height: 95vh;
+                max-height: 900px;
+                border-radius: 2rem; 
+                border: 8px solid #cbd5e1;
+            }
+        }
+
+        header { flex: 0 0 auto; z-index: 50; }
+        nav { flex: 0 0 auto; z-index: 50; padding-bottom: env(safe-area-inset-bottom); }
+        main { flex: 1 1 auto; overflow-y: auto; overflow-x: hidden; position: relative; scroll-behavior: smooth; }
+
+        h1, h2, h3, h4, .font-heading { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .font-playful { font-family: 'Fredoka', sans-serif; }
+
+        .glass-nav {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(226, 232, 240, 0.6);
+            box-shadow: 0 -10px 30px rgba(0,0,0,0.03);
+        }
+
+        .tab-content { display: none; opacity: 0; transition: opacity 0.2s ease; }
+        .tab-content.active { display: block; opacity: 1; animation: fadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Timeline Premium */
+        .timeline-line { position: absolute; left: 28px; top: 24px; bottom: 24px; width: 3px; background: linear-gradient(to bottom, #3b82f6, #ef4444, #eab308, #22c55e); border-radius: 4px; z-index: 0; opacity: 0.8; }
+        .timeline-card { position: relative; z-index: 1; box-shadow: 0 12px 35px -10px rgba(0, 0, 0, 0.08); border: 1px solid rgba(255, 255, 255, 0.9); background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); }
+        
+        details > summary { list-style: none; }
+        details > summary::-webkit-details-marker { display: none; }
+        details[open] summary ~ * { animation: slideDown 0.3s ease-in-out; }
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        details[open] summary .fa-chevron-down { transform: rotate(180deg); }
+
+        .check-container input:checked + div { background-color: #22c55e; border-color: #22c55e; }
+        .check-container input:checked + div svg { display: block; }
+        .check-container.completed span { text-decoration: line-through; color: #94a3b8; }
+
+        .nav-item { color: #94a3b8; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; position: relative;}
+        .nav-item.active { color: var(--primary); }
+        .nav-item.active i { transform: translateY(-6px) scale(1.15); text-shadow: 0 6px 12px rgba(37, 99, 235, 0.2); }
+        .nav-item.active::after { content: ''; position: absolute; bottom: -8px; left: 50%; transform: translateX(-50%); width: 4px; height: 4px; background: var(--primary); border-radius: 50%; }
+        
+        .chat-bubble-bot { background: white; border-radius: 20px 20px 20px 4px; box-shadow: 0 4px 15px rgba(0,0,0,0.04); border: 1px solid #f1f5f9; }
+        .chat-bubble-user { background: linear-gradient(135deg, #2563eb, #1d4ed8); color: white; border-radius: 20px 20px 4px 20px; box-shadow: 0 4px 15px rgba(37, 99, 235, 0.2); }
+        
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+        #toast-container { position: absolute; top: 90px; left: 50%; transform: translateX(-50%); width: 92%; z-index: 100; pointer-events: none; display: flex; flex-direction: column; gap: 10px; }
+        .toast { background: rgba(255, 255, 255, 0.98); backdrop-filter: blur(12px); border-left: 4px solid var(--primary); box-shadow: 0 15px 30px -5px rgba(0, 0, 0, 0.15); border-radius: 14px; padding: 14px; pointer-events: auto; animation: slideInToast 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;}
+        @keyframes slideInToast { from { transform: translateY(-20px) scale(0.9); opacity: 0; } to { transform: translateY(0) scale(1); opacity: 1; } }
+        
+        @keyframes shake { 0%, 100% {transform: translateX(0);} 25% {transform: translateX(-5px);} 75% {transform: translateX(5px);} }
+        .shake-err { animation: shake 0.4s ease-in-out; }
+        
+        .preview-card { scroll-snap-align: start; flex-shrink: 0; width: 160px; background: #ffffff; border-radius: 20px; overflow: hidden; border: 1px solid #f1f5f9; text-decoration: none; color: inherit; position: relative; box-shadow: 0 6px 20px rgba(0,0,0,0.04); transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);}
+        .preview-card:active { transform: scale(0.96); box-shadow: 0 2px 10px rgba(0,0,0,0.03);}
+        .preview-card img { width: 100%; height: 100px; object-fit: cover; background-color: #e2e8f0; transition: transform 0.3s ease;}
+        .preview-card:hover img { transform: scale(1.05); }
+        .preview-badge { position: absolute; top: 8px; left: 8px; background: rgba(255,255,255,0.95); backdrop-filter: blur(4px); padding: 2px 8px; border-radius: 10px; font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .external-link-icon { position: absolute; top: 8px; right: 8px; background: rgba(255,255,255,0.95); width: 26px; height: 26px; border-radius: 50%; display: flex; justify-content: center; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.1); backdrop-filter: blur(4px);}
+
+        .gps-pulse { width: 14px; height: 14px; background: #2563eb; border-radius: 50%; position: relative; border: 2px solid white; box-shadow: 0 0 8px rgba(0,0,0,0.4);}
+        .gps-pulse::after { content: ''; width: 34px; height: 34px; background: rgba(37, 99, 235, 0.4); border-radius: 50%; position: absolute; top: -12px; left: -12px; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% { transform: scale(0.5); opacity: 1; } 100% { transform: scale(1.5); opacity: 0; } }
+
+        #custom-modal { transition: opacity 0.2s ease; }
+        .modal-content { transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+
+        /* PLAYFUL THEME FOR GAMES */
+        .playful-bg { background-color: #f0f9ff; background-image: radial-gradient(#bae6fd 1.5px, transparent 1.5px); background-size: 24px 24px; }
+        .btn-bubbly { background: linear-gradient(145deg, #ffffff, #f8fafc); border: 2px solid #e2e8f0; border-bottom-width: 4px; border-radius: 20px; transition: all 0.1s; box-shadow: 0 4px 10px rgba(0,0,0,0.02);}
+        .btn-bubbly:active { border-bottom-width: 2px; transform: translateY(2px); box-shadow: 0 2px 5px rgba(0,0,0,0.02);}
+        .btn-bubbly.active-game { border-color: #3b82f6; background: #eff6ff; color: #1d4ed8; }
+        
+        /* New Flip Card for Who am I */
+        .flip-card { perspective: 1000px; height: 200px; width: 100%; cursor: pointer;}
+        .flip-card-inner { position: relative; width: 100%; height: 100%; text-align: center; transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1); transform-style: preserve-3d; }
+        .flip-card.is-flipped .flip-card-inner { transform: rotateY(180deg); }
+        .flip-card-front, .flip-card-back { position: absolute; width: 100%; height: 100%; -webkit-backface-visibility: hidden; backface-visibility: hidden; border-radius: 1.5rem; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        .flip-card-front { background: linear-gradient(135deg, #3b82f6, #6366f1); color: white; border: 4px solid #93c5fd; }
+        .flip-card-back { background: white; color: #1e293b; transform: rotateY(180deg); border: 4px solid #e2e8f0; }
+    </style>
+</head>
+<body>
+
+<div id="app-wrapper">
+
+    <header class="bg-white px-6 pt-safe-top pb-4 z-50 flex justify-between items-center relative overflow-visible border-b border-slate-100 shadow-sm" style="padding-top: max(16px, env(safe-area-inset-top));">
+        <div class="relative z-10">
+            <h1 class="text-2xl font-extrabold tracking-tight leading-none text-slate-900">Bella Italia '26</h1>
+            <p class="text-[10px] text-blue-600 font-bold uppercase tracking-widest mt-1.5 flex items-center gap-1.5"><i class="fa-solid fa-car-side"></i> 13.07.–23.07. • 4 Pers.</p>
+        </div>
+        <button onclick="app.triggerLiveNotification()" class="relative z-10 h-11 w-11 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-full flex items-center justify-center text-slate-700 shadow-sm active:scale-90 transition duration-200" title="Push-Test">
+            <i class="fa-solid fa-bell text-lg"></i>
+            <span class="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-full border-2 border-white animate-pulse"></span>
+        </button>
+    </header>
+
+    <div id="toast-container"></div>
+
+    <!-- CUSTOM MODAL -->
+    <div id="custom-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4 opacity-0 pointer-events-none">
+        <div class="modal-content bg-white rounded-[2rem] p-7 w-full max-w-sm shadow-2xl transform scale-95">
+            <div class="w-14 h-14 rounded-full bg-red-50 text-red-500 flex items-center justify-center text-2xl mx-auto mb-5 border border-red-100" id="modal-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+            <h3 id="modal-title" class="text-xl font-extrabold text-center text-slate-900 mb-2">Achtung</h3>
+            <p id="modal-desc" class="text-sm text-center text-slate-500 mb-8 leading-relaxed">Bist du sicher?</p>
+            <div class="flex gap-3">
+                <button onclick="app.closeModal()" class="flex-1 bg-slate-50 border border-slate-200 text-slate-700 font-bold py-3.5 rounded-2xl text-sm active:bg-slate-100 transition shadow-sm">Abbrechen</button>
+                <button id="modal-confirm-btn" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-2xl text-sm shadow-md active:scale-[0.98] transition">Bestätigen</button>
+            </div>
+        </div>
+    </div>
+
+    <main class="bg-slate-50/50" id="main-scroll">
+        
+        <!-- ROUTE TAB (DEEP DIVE SIGHTSEEING) -->
+        <section id="tab-route" class="tab-content active p-4">
+            <div class="flex items-center justify-between mb-6 px-2 mt-2">
+                <h2 class="font-heading text-2xl font-extrabold text-slate-900">Eure Route</h2>
+                <div class="text-[10px] bg-white border border-slate-200 text-slate-600 px-3 py-1.5 rounded-full font-bold shadow-sm flex items-center gap-1.5"><i class="fa-solid fa-flag-checkered text-blue-500"></i> ~1900 km Total</div>
+            </div>
+            
+            <div class="relative">
+                <div class="timeline-line"></div>
+                <div class="space-y-10 pl-9 relative pb-6">
+                    
+                    <!-- STOP 1: ORVIETO -->
+                    <div class="timeline-card rounded-[2rem] relative overflow-hidden">
+                        <span class="absolute -left-[45px] top-5 h-6 w-6 rounded-full bg-blue-500 ring-4 ring-slate-50 flex items-center justify-center shadow-lg z-10"><i class="fa-solid fa-1 text-white text-[10px] font-bold"></i></span>
+                        <div class="relative h-44 bg-slate-200">
+                            <img src="https://images.unsplash.com/photo-1601018804791-c5ba5334c935?auto=format&fit=crop&w=600&q=80" alt="Orvieto" class="w-full h-44 object-cover" onerror="app.handleImgError(this, 'Orvieto')">
+                            <div class="absolute bottom-0 left-0 w-full bg-gradient-to-t from-slate-900 via-slate-900/60 to-transparent p-5 flex justify-between items-end">
+                                <div>
+                                    <span class="text-[9px] font-extrabold text-blue-100 uppercase tracking-widest bg-blue-600/90 backdrop-blur-md px-2.5 py-1 rounded-lg">Mo., 13. Juli • 1 Nacht</span>
+                                    <h3 class="font-heading font-extrabold text-white text-2xl mt-1.5 drop-shadow-lg">Orvieto</h3>
+                                </div>
+                                <div class="text-right">
+                                    <span class="text-[10px] font-bold text-slate-800 bg-white/95 px-2.5 py-1.5 rounded-xl backdrop-blur-md shadow-sm"><i class="fa-solid fa-sun text-yellow-500"></i> 28°C</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="p-5 bg-white">
+                            <!-- ETA Block -->
+                            <div class="bg-slate-50 p-3.5 rounded-2xl border border-slate-100 flex justify-between items-center text-xs text-slate-800 mb-5 shadow-sm">
+                                <span title="Sissach" class="flex flex-col"><span class="text-[9px] text-slate-400 uppercase font-bold tracking-wider">Start CH</span><span class="font-bold text-[13px] mt-0.5"><i class="fa-solid fa-car text-blue-500"></i> 06:00</span></span>
+                                <div class="flex-1 flex flex-col items-center justify-center px-3">
+                                    <span class="text-[9px] font-bold text-slate-400 bg-white px-2 py-0.5 rounded-full border border-slate-100 z-10">6h 30m</span>
+                                    <div class="h-[2px] bg-slate-200 w-full relative -mt-[9px] rounded"><i class="fa-solid fa-chevron-right absolute -right-1 -top-[4px] text-[10px] text-slate-300"></i></div>
+                                </div>
+                                <span title="Orvieto" class="flex flex-col text-right"><span class="text-[9px] text-slate-400 uppercase font-bold tracking-wider">Ankunft IT</span><span class="font-bold text-[13px] mt-0.5"><i class="fa-solid fa-flag-checkered text-green-500"></i> ~13:30</span></span>
+                            </div>
+                            
+                            <!-- Hotel Info -->
+                            <div class="flex justify-between items-start mb-4">
+                                <div>
+                                    <p class="text-sm font-extrabold text-slate-900"><i class="fa-solid fa-bed text-blue-500 w-5"></i> B&B La Casa Di Tufo</p>
+                                    <p class="text-[11px] font-medium text-slate-500 mt-1"><i class="fa-solid fa-location-dot w-4 text-slate-400"></i> Via Del Paradiso 11, Orvieto</p>
+                                </div>
+                                <a href="https://maps.google.com/?q=Via+Del+Paradiso+11+Orvieto" target="_blank" class="bg-blue-50 p-3 rounded-2xl text-blue-600 hover:bg-blue-100 active:scale-95 transition shadow-sm border border-blue-100"><i class="fa-solid fa-location-arrow text-lg"></i></a>
+                            </div>
+                            
+                            <div class="grid grid-cols-2 gap-3 mb-5">
+                                <div class="bg-slate-50 rounded-2xl p-3 border border-slate-100"><p class="text-[9px] text-slate-400 uppercase font-bold tracking-wider">Tür-PIN</p><p class="font-mono font-bold text-blue-600 text-lg mt-0.5">1296</p></div>
+                                <div class="bg-slate-50 rounded-2xl p-3 border border-slate-100"><p class="text-[9px] text-slate-400 uppercase font-bold tracking-wider">Ref-Nr</p><p class="font-mono font-bold text-slate-700 text-sm mt-1.5">5901798677</p></div>
+                            </div>
+                            
+                            <!-- Deep Dive Sightseeing -->
+                            <h4 class="font-extrabold text-slate-900 text-xs mb-3 flex items-center gap-2"><i class="fa-solid fa-binoculars text-blue-500"></i> Highlights in Orvieto</h4>
+                            <div class="flex gap-4 overflow-x-auto pb-4 scrollbar-hide snap-x px-1 -mx-1">
+                                <a href="https://maps.google.com/?q=Foro+Boario+Orvieto" target="_blank" class="preview-card shrink-0">
+                                    <div class="preview-badge text-slate-700">Parken</div>
+                                    <div class="external-link-icon"><i class="fa-solid fa-arrow-up-right-from-square text-[10px] text-slate-400"></i></div>
+                                    <img src="https://images.unsplash.com/photo-1643194684988-cb58045ca35e?auto=format&fit=crop&w=240&q=80" alt="Rolltreppe" onerror="app.handleImgError(this, 'Rolltreppe')">
+                                    <div class="p-3"><p class="text-[11px] font-bold text-slate-900 mb-1">Foro Boario</p><p class="text-[9px] font-medium text-slate-500 leading-snug">Parkt hier unten! Gigantische Rolltreppen führen quer durch den Fels in die Altstadt.</p></div>
+                                </a>
+                                <a href="https://maps.google.com/?q=Pozzo+di+San+Patrizio" target="_blank" class="preview-card shrink-0">
+                                    <div class="preview-badge text-blue-600">Für Kids</div>
+                                    <div class="external-link-icon"><i class="fa-solid fa-arrow-up-right-from-square text-[10px] text-slate-400"></i></div>
+                                    <img src="https://images.unsplash.com/photo-1598466657805-4f36db08c3ec?auto=format&fit=crop&w=240&q=80" alt="Brunnen" onerror="app.handleImgError(this, 'Brunnen')">
+                                    <div class="p-3"><p class="text-[11px] font-bold text-slate-900 mb-1">Pozzo San Patrizio</p><p class="text-[9px] font-medium text-slate-500 leading-snug">Ein 53m tiefer Brunnen. Zwei Treppen, die sich genialerweise nie kreuzen!</p></div>
+                                </a>
+                                <a href="https://maps.google.com/?q=Trattoria+La+Palomba+Orvieto" target="_blank" class="preview-card shrink-0">
+                                    <div class="preview-badge text-orange-600">Food Tipp</div>
+                                    <div class="external-link-icon"><i class="fa-solid fa-arrow-up-right-from-square text-[10px] text-slate-400"></i></div>
+                                    <img src="https://images.unsplash.com/photo-1473093295043-cdd812d0e601?auto=format&fit=crop&w=240&q=80" alt="Pasta" onerror="app.handleImgError(this, 'Pasta')">
+                                    <div class="p-3"><p class="text-[11px] font-bold text-slate-900 mb-1">Trattoria La Palomba</p><p class="text-[9px] font-medium text-slate-500 leading-snug">Berühmt für die "Umbrichelli" (lokale, dicke handgemachte Pasta). Reservieren!</p></div>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- STOP 2: ROM -->
+                    <div class="timeline-card rounded-[2rem] relative overflow-hidden">
+                        <span class="absolute -left-[45px] top-5 h-6 w-6 rounded-full bg-red-500 ring-4 ring-slate-50 flex items-center justify-center shadow-lg z-10"><i class="fa-solid fa-2 text-white text-[10px] font-bold"></i></span>
+                        <div class="relative h-44 bg-slate-200">
+                            <img src="https://images.unsplash.com/photo-1552832230-c0197dd311b5?auto=format&fit=crop&w=600&q=80" alt="Rom" class="w-full h-44 object-cover" onerror="app.handleImgError(this, 'Rom')">
+                            <div class="absolute bottom-0 left-0 w-full bg-gradient-to-t from-slate-900 via-slate-900/60 to-transparent p-5 flex justify-between items-end">
+                                <div>
+                                    <span class="text-[9px] font-extrabold text-red-100 uppercase tracking-widest bg-red-600/90 backdrop-blur-md px-2.5 py-1 rounded-lg">14. - 16. Juli • 2 Nächte</span>
+                                    <h3 class="font-heading font-extrabold text-white text-2xl mt-1.5 drop-shadow-lg">Rom</h3>
+                                </div>
+                                <div class="text-right">
+                                    <span class="text-[10px] font-bold text-slate-800 bg-white/95 px-2.5 py-1.5 rounded-xl backdrop-blur-md shadow-sm"><i class="fa-solid fa-fire text-orange-500"></i> 34°C+</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="p-5 bg-white">
+                            <div class="bg-slate-50 p-3.5 rounded-2xl border border-slate-100 flex justify-between items-center text-xs text-slate-800 mb-5 shadow-sm">
+                                <span title="Orvieto" class="flex flex-col"><span class="text-[9px] text-slate-400 uppercase font-bold tracking-wider">Start</span><span class="font-bold text-[13px] mt-0.5"><i class="fa-solid fa-car text-red-500"></i> 10:00</span></span>
+                                <div class="flex-1 flex flex-col items-center justify-center px-3">
+                                    <span class="text-[9px] font-bold text-slate-400 bg-white px-2 py-0.5 rounded-full border border-slate-100 z-10">1h 45m</span>
+                                    <div class="h-[2px] bg-slate-200 w-full relative -mt-[9px] rounded"><i class="fa-solid fa-chevron-right absolute -right-1 -top-[4px] text-[10px] text-slate-300"></i></div>
+                                </div>
+                                <span title="Rom" class="flex flex-col text-right"><span class="text-[9px] text-slate-400 uppercase font-bold tracking-wider">Ankunft</span><span class="font-bold text-[13px] mt-0.5"><i class="fa-solid fa-flag-checkered text-green-500"></i> ~11:45</span></span>
+                            </div>
+
+                            <div class="flex justify-between items-start mb-4">
+                                <div>
+                                    <p class="text-sm font-extrabold text-slate-900"><i class="fa-solid fa-key text-red-500 w-5"></i> Aurelia Vatican Apts.</p>
+                                    <p class="text-[11px] font-medium text-slate-500 mt-1"><i class="fa-solid fa-location-dot w-4 text-slate-400"></i> Via Dei Laterizi 20, Rom</p>
+                                </div>
+                                <a href="https://maps.google.com/?q=Via+Dei+Laterizi+20+Rome" target="_blank" class="bg-red-50 p-3 rounded-2xl text-red-600 hover:bg-red-100 active:scale-95 transition shadow-sm border border-red-100"><i class="fa-solid fa-location-arrow text-lg"></i></a>
+                            </div>
+                            
+                            <div class="grid grid-cols-2 gap-3 mb-5">
+                                <div class="bg-slate-50 rounded-2xl p-3 border border-slate-100"><p class="text-[9px] text-slate-400 uppercase font-bold tracking-wider">Apt-PIN</p><p class="font-mono font-bold text-red-600 text-lg mt-0.5">2875</p></div>
+                                <div class="bg-slate-50 rounded-2xl p-3 border border-slate-100"><p class="text-[9px] text-slate-400 uppercase font-bold tracking-wider">Ref-Nr</p><p class="font-mono font-bold text-slate-700 text-sm mt-1.5">6306658109</p></div>
+                            </div>
+                            
+                            <!-- Deep Dive Sightseeing Rome -->
+                            <h4 class="font-extrabold text-slate-900 text-xs mb-3 flex items-center gap-2"><i class="fa-solid fa-binoculars text-red-500"></i> Vatikan & Rom (Smart erleben)</h4>
+                            <div class="flex gap-4 overflow-x-auto pb-4 scrollbar-hide snap-x px-1 -mx-1">
+                                <a href="https://maps.google.com/?q=St+Peter's+Basilica" target="_blank" class="preview-card shrink-0">
+                                    <div class="preview-badge text-slate-700">Strategie</div>
+                                    <div class="external-link-icon"><i class="fa-solid fa-arrow-up-right-from-square text-[10px] text-slate-400"></i></div>
+                                    <img src="https://images.unsplash.com/photo-1573003058863-718610eb30e7?auto=format&fit=crop&w=240&q=80" alt="Petersdom" onerror="app.handleImgError(this, 'Petersdom')">
+                                    <div class="p-3"><p class="text-[11px] font-bold text-slate-900 mb-1">Petersdom (Gratis!)</p><p class="text-[9px] font-medium text-slate-500 leading-snug">Ist nur 15 Min zu Fuss von euch! Geht morgens um exakt <b>07:00 Uhr</b> hin = Keine Schlange, null Wartezeit.</p></div>
+                                </a>
+                                <a href="https://maps.google.com/?q=Castel+Sant'Angelo" target="_blank" class="preview-card shrink-0">
+                                    <div class="preview-badge text-blue-600">Für Kids</div>
+                                    <div class="external-link-icon"><i class="fa-solid fa-arrow-up-right-from-square text-[10px] text-slate-400"></i></div>
+                                    <img src="https://images.unsplash.com/photo-1604580864964-0462f5d5b1a8?auto=format&fit=crop&w=240&q=80" alt="Engelsburg" onerror="app.handleImgError(this, 'Engelsburg')">
+                                    <div class="p-3"><p class="text-[11px] font-bold text-slate-900 mb-1">Engelsburg</p><p class="text-[9px] font-medium text-slate-500 leading-snug">Eine echte, gigantische Burg mit Kanonenkugeln und Geheimgängen. Kids lieben das!</p></div>
+                                </a>
+                                <a href="https://maps.google.com/?q=Bonci+Pizzarium+Rome" target="_blank" class="preview-card shrink-0">
+                                    <div class="preview-badge text-orange-600">Food Tipp</div>
+                                    <div class="external-link-icon"><i class="fa-solid fa-arrow-up-right-from-square text-[10px] text-slate-400"></i></div>
+                                    <img src="https://images.unsplash.com/photo-1593504049359-74330189a345?auto=format&fit=crop&w=240&q=80" alt="Pizza" onerror="app.handleImgError(this, 'Pizza')">
+                                    <div class="p-3"><p class="text-[11px] font-bold text-slate-900 mb-1">Pizzarium Bonci</p><p class="text-[9px] font-medium text-slate-500 leading-snug">Gleich um die Ecke! Die berühmteste "Pizza al taglio" (Stück) von ganz Rom. Holt euch Nummern und wartet.</p></div>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- STOP 3: APULIEN -->
+                    <div class="timeline-card rounded-[2rem] relative overflow-hidden">
+                        <span class="absolute -left-[45px] top-5 h-6 w-6 rounded-full bg-yellow-500 ring-4 ring-slate-50 flex items-center justify-center shadow-lg z-10"><i class="fa-solid fa-3 text-white text-[10px] font-bold"></i></span>
+                        <div class="relative h-44 bg-slate-200">
+                            <img src="https://images.unsplash.com/photo-1590059345224-d9ee787e9142?auto=format&fit=crop&w=600&q=80" alt="Salento" class="w-full h-44 object-cover" onerror="app.handleImgError(this, 'Salento')">
+                            <div class="absolute bottom-0 left-0 w-full bg-gradient-to-t from-slate-900 via-slate-900/60 to-transparent p-5 flex justify-between items-end">
+                                <div>
+                                    <span class="text-[9px] font-extrabold text-yellow-100 uppercase tracking-widest bg-yellow-600/90 backdrop-blur-md px-2.5 py-1 rounded-lg">16. - 21. Juli • 5 Nächte</span>
+                                    <h3 class="font-heading font-extrabold text-white text-2xl mt-1.5 drop-shadow-lg">Salento (Apulien)</h3>
+                                </div>
+                                <div class="text-right">
+                                    <span class="text-[10px] font-bold text-slate-800 bg-white/95 px-2.5 py-1.5 rounded-xl backdrop-blur-md shadow-sm"><i class="fa-solid fa-temperature-arrow-up text-red-500"></i> 36°C+</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="p-5 bg-white">
+                            <div class="bg-slate-50 p-3.5 rounded-2xl border border-slate-100 flex justify-between items-center text-xs text-slate-800 mb-5 shadow-sm">
+                                <span title="Rom" class="flex flex-col"><span class="text-[9px] text-slate-400 uppercase font-bold tracking-wider">Start</span><span class="font-bold text-[13px] mt-0.5"><i class="fa-solid fa-car text-yellow-500"></i> 09:00</span></span>
+                                <div class="flex-1 flex flex-col items-center justify-center px-3">
+                                    <span class="text-[9px] font-bold text-slate-400 bg-white px-2 py-0.5 rounded-full border border-slate-100 z-10">6h 15m</span>
+                                    <div class="h-[2px] bg-slate-200 w-full relative -mt-[9px] rounded"><i class="fa-solid fa-chevron-right absolute -right-1 -top-[4px] text-[10px] text-slate-300"></i></div>
+                                </div>
+                                <span title="Apulien" class="flex flex-col text-right"><span class="text-[9px] text-slate-400 uppercase font-bold tracking-wider">Ankunft</span><span class="font-bold text-[13px] mt-0.5"><i class="fa-solid fa-flag-checkered text-green-500"></i> ~16:00</span></span>
+                            </div>
+
+                            <div class="flex justify-between items-start mb-4">
+                                <div>
+                                    <p class="text-sm font-extrabold text-slate-900"><i class="fa-solid fa-building text-yellow-500 w-5"></i> Smeraldo Residence</p>
+                                    <p class="text-[11px] font-medium text-slate-500 mt-1"><i class="fa-solid fa-location-dot w-4 text-slate-400"></i> Via O. Nelson 21, Torre S. Giovanni</p>
+                                </div>
+                                <a href="https://maps.google.com/?q=Via+O.+Nelson+21+Torre+San+Giovanni" target="_blank" class="bg-yellow-50 p-3 rounded-2xl text-yellow-600 hover:bg-yellow-100 active:scale-95 transition shadow-sm border border-yellow-100"><i class="fa-solid fa-location-arrow text-lg"></i></a>
+                            </div>
+                            
+                            <!-- CRITICAL ALERT -->
+                            <div class="bg-red-50 border border-red-100 p-3.5 mb-5 rounded-2xl shadow-sm flex gap-3 items-center">
+                                <div class="bg-white p-2.5 rounded-xl shrink-0 shadow-sm"><i class="fa-solid fa-money-bill-wave text-red-500 text-xl"></i></div>
+                                <div>
+                                    <p class="text-[11px] font-extrabold text-red-900 uppercase tracking-wide">Achtung Kaution!</p>
+                                    <p class="text-[10px] font-medium text-red-800 mt-1 leading-snug">Exakt <b>200€ in BAR</b> beim Check-in bereithalten. Keine Karte!</p>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-3 mb-5">
+                                <div class="bg-slate-50 rounded-2xl p-3 border border-slate-100"><p class="text-[9px] text-slate-400 uppercase font-bold tracking-wider">Zimmer-PIN</p><p class="font-mono font-bold text-yellow-600 text-lg mt-0.5">3134</p></div>
+                                <div class="bg-slate-50 rounded-2xl p-3 border border-slate-100"><p class="text-[9px] text-slate-400 uppercase font-bold tracking-wider">Ref-Nr</p><p class="font-mono font-bold text-slate-700 text-sm mt-1.5">5761221614</p></div>
+                            </div>
+                            
+                            <!-- Deep Dive Sightseeing Apulia -->
+                            <h4 class="font-extrabold text-slate-900 text-xs mb-3 flex items-center gap-2"><i class="fa-solid fa-binoculars text-yellow-500"></i> Salento Strände & Erleben</h4>
+                            <div class="flex gap-4 overflow-x-auto pb-4 scrollbar-hide snap-x px-1 -mx-1">
+                                <a href="https://maps.google.com/?q=Punta+della+Suina" target="_blank" class="preview-card shrink-0">
+                                    <div class="preview-badge text-blue-600">Natur-Strand</div>
+                                    <div class="external-link-icon"><i class="fa-solid fa-arrow-up-right-from-square text-[10px] text-slate-400"></i></div>
+                                    <img src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=240&q=80" alt="Strand" onerror="app.handleImgError(this, 'Strand')">
+                                    <div class="p-3"><p class="text-[11px] font-bold text-slate-900 mb-1">Punta della Suina</p><p class="text-[9px] font-medium text-slate-500 leading-snug">Ein traumhafter Strand, eingebettet in einen duftenden Pinienwald. Kristallklares Wasser.</p></div>
+                                </a>
+                                <a href="https://maps.google.com/?q=Santa+Maria+di+Leuca" target="_blank" class="preview-card shrink-0">
+                                    <div class="preview-badge text-slate-700">Ausflug</div>
+                                    <div class="external-link-icon"><i class="fa-solid fa-arrow-up-right-from-square text-[10px] text-slate-400"></i></div>
+                                    <img src="https://images.unsplash.com/photo-1534447385973-2070e1781296?auto=format&fit=crop&w=240&q=80" alt="Leuca" onerror="app.handleImgError(this, 'Küste')">
+                                    <div class="p-3"><p class="text-[11px] font-bold text-slate-900 mb-1">Finibus Terrae (Leuca)</p><p class="text-[9px] font-medium text-slate-500 leading-snug">Das absolute Ende des Absatzes! Hier treffen sich laut Legende zwei Meere.</p></div>
+                                </a>
+                                <a href="https://maps.google.com/?q=Grotta+della+Zinzulusa" target="_blank" class="preview-card shrink-0">
+                                    <div class="preview-badge text-blue-600">Für Kids</div>
+                                    <div class="external-link-icon"><i class="fa-solid fa-arrow-up-right-from-square text-[10px] text-slate-400"></i></div>
+                                    <img src="https://images.unsplash.com/photo-1544644181-1484b3f8c8b0?auto=format&fit=crop&w=240&q=80" alt="Höhle" onerror="app.handleImgError(this, 'Höhle')">
+                                    <div class="p-3"><p class="text-[11px] font-bold text-slate-900 mb-1">Grotta Zinzulusa</p><p class="text-[9px] font-medium text-slate-500 leading-snug">Eine gewaltige Tropfsteinhöhle am Meer. Ein echtes Piraten-Abenteuer für die Kinder.</p></div>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- STOP 4: LAMON -->
+                    <div class="timeline-card rounded-[2rem] relative overflow-hidden">
+                        <span class="absolute -left-[45px] top-5 h-6 w-6 rounded-full bg-green-500 ring-4 ring-slate-50 flex items-center justify-center shadow-lg z-10"><i class="fa-solid fa-4 text-white text-[10px] font-bold"></i></span>
+                        <div class="relative h-40 bg-slate-200">
+                            <img src="https://images.unsplash.com/photo-1520625447721-a3f2d29525c3?auto=format&fit=crop&w=600&q=80" alt="Lamon" class="w-full h-40 object-cover" onerror="app.handleImgError(this, 'Berge')">
+                            <div class="absolute bottom-0 left-0 w-full bg-gradient-to-t from-slate-900 via-slate-900/60 to-transparent p-5 flex justify-between items-end">
+                                <div>
+                                    <span class="text-[9px] font-extrabold text-green-100 uppercase tracking-widest bg-green-600/90 backdrop-blur-md px-2.5 py-1 rounded-lg">21. - 23. Juli • 2 Nächte</span>
+                                    <h3 class="font-heading font-extrabold text-white text-2xl mt-1.5 drop-shadow-lg">Lamon (Nonna)</h3>
+                                </div>
+                                <div class="text-right">
+                                    <span class="text-[10px] font-bold text-slate-800 bg-white/95 px-2.5 py-1.5 rounded-xl backdrop-blur-md shadow-sm"><i class="fa-solid fa-cloud-sun text-slate-400"></i> 22°C</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="p-5 bg-white">
+                            <div class="bg-slate-900 rounded-2xl p-5 text-white shadow-xl relative overflow-hidden">
+                                <i class="fa-solid fa-mountain-sun absolute -right-5 -bottom-5 text-7xl text-slate-800 opacity-50"></i>
+                                <h4 class="font-extrabold text-sm flex items-center gap-2 mb-2.5 relative z-10"><i class="fa-solid fa-triangle-exclamation text-red-400"></i> Die Mammut-Etappe!</h4>
+                                <p class="text-xs text-slate-300 font-medium leading-relaxed relative z-10">Fast 1.000 km! <b>Diego & Gabriela:</b> Startet zwingend um <b>04:00 Uhr morgens</b>. Die Strassen (SS16) sind noch frei, die Kids schlafen weiter, und ihr vermeidet den 40-Grad-Stau an der Adria (Ancona/Bologna).</p>
+                                <div class="bg-slate-800/80 mt-4 p-3 rounded-xl flex justify-between text-[11px] border border-slate-700 font-mono relative z-10 shadow-inner">
+                                    <span class="flex items-center gap-2"><i class="fa-solid fa-moon text-blue-400 text-sm"></i> 04:00 Start</span>
+                                    <span class="flex items-center gap-2 text-slate-400">➔</span>
+                                    <span class="flex items-center gap-2"><i class="fa-solid fa-sun text-yellow-500 text-sm"></i> ~15:30 Lamon</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Deep Dive Sightseeing Lamon -->
+                            <div class="mt-5">
+                                <h4 class="font-extrabold text-slate-900 text-xs mb-3 flex items-center gap-2"><i class="fa-solid fa-binoculars text-green-500"></i> Bergluft & Erholung</h4>
+                                <div class="flex gap-4 overflow-x-auto pb-2 scrollbar-hide snap-x px-1 -mx-1">
+                                    <a href="https://maps.google.com/?q=Cascate+del+Salton+Lamon" target="_blank" class="preview-card shrink-0">
+                                        <div class="preview-badge text-blue-600">Natur</div>
+                                        <div class="external-link-icon"><i class="fa-solid fa-arrow-up-right-from-square text-[10px] text-slate-400"></i></div>
+                                        <img src="https://images.unsplash.com/photo-1504615458222-979e04d69a27?auto=format&fit=crop&w=240&q=80" alt="Wasserfall" onerror="app.handleImgError(this, 'Wasserfall')">
+                                        <div class="p-3"><p class="text-[11px] font-bold text-slate-900 mb-1">Cascata del Salton</p><p class="text-[9px] font-medium text-slate-500 leading-snug">Wunderschöne, verborgene Wasserfälle. Perfekt zum Abkühlen nach der langen Fahrt.</p></div>
+                                    </a>
+                                    <a href="https://maps.google.com/?q=Ponte+Tibetano+Val+de+la+Gula" target="_blank" class="preview-card shrink-0">
+                                        <div class="preview-badge text-slate-700">Action</div>
+                                        <div class="external-link-icon"><i class="fa-solid fa-arrow-up-right-from-square text-[10px] text-slate-400"></i></div>
+                                        <img src="https://images.unsplash.com/photo-1542157643-4bf870fc30a4?auto=format&fit=crop&w=240&q=80" alt="Brücke" onerror="app.handleImgError(this, 'Brücke')">
+                                        <div class="p-3"><p class="text-[11px] font-bold text-slate-900 mb-1">Ponte Tibetano</p><p class="text-[9px] font-medium text-slate-500 leading-snug">Eine spektakuläre Hängebrücke über die Schlucht. Nur für Schwindelfreie!</p></div>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+        <section id="tab-diary" class="tab-content p-4 h-full flex flex-col">
+            <div class="flex justify-between items-center mb-5 px-2 mt-2">
+                <h2 class="font-heading text-2xl font-extrabold text-slate-900">Live-Tagebuch</h2>
+                <button onclick="app.toggleGPS()" id="gps-btn" class="bg-white text-slate-600 border border-slate-200 text-xs font-bold px-4 py-2.5 rounded-full shadow-sm flex items-center gap-2 transition active:scale-95"><i class="fa-solid fa-location-crosshairs text-blue-500 text-sm"></i> <span>Tracking Aus</span></button>
+            </div>
+            
+            <!-- Map Container -->
+            <div class="bg-white p-2 rounded-[2rem] shadow-sm border border-slate-100 mb-5 shrink-0 relative z-0">
+                <div id="trip-map" style="height: 220px; width: 100%; border-radius: 1.5rem; z-index: 1;"></div>
+            </div>
+
+            <!-- RAV4 Wächter -->
+            <div class="bg-gradient-to-r from-slate-800 to-slate-900 rounded-[2rem] p-5 shadow-lg mb-5 text-white flex justify-between items-center shrink-0 border border-slate-700">
+                <div>
+                    <h3 class="font-extrabold text-sm flex items-center gap-2"><i class="fa-solid fa-car-on text-blue-400"></i> RAV4-Wächter</h3>
+                    <p class="text-xs text-slate-400 font-medium leading-tight mt-1.5">Speichere den Parkplatz.</p>
+                </div>
+                <div class="flex gap-3">
+                    <button onclick="app.saveParking()" class="bg-white/10 hover:bg-white/20 border border-white/20 text-white w-12 h-12 rounded-full flex items-center justify-center shadow-sm active:scale-95 transition" title="Hier geparkt"><i class="fa-solid fa-location-dot"></i></button>
+                    <button id="btn-find-car" onclick="app.openParkingMap()" class="bg-blue-600 hover:bg-blue-700 border border-blue-500 text-white w-12 h-12 rounded-full flex items-center justify-center shadow active:scale-95 transition hidden" title="Finde Auto"><i class="fa-solid fa-person-walking text-lg"></i></button>
+                </div>
+            </div>
+
+            <!-- Add Entry -->
+            <div class="bg-white rounded-[2rem] shadow-sm border border-slate-100 p-4 mb-5 shrink-0">
+                <textarea id="diary-text" rows="2" placeholder="Was erleben wir gerade?" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 text-sm font-medium outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-50 mb-3 resize-none transition placeholder:text-slate-400"></textarea>
+                <div class="flex gap-2">
+                    <select id="diary-mood" class="bg-slate-50 border border-slate-200 rounded-2xl px-3 py-3 text-sm font-medium outline-none text-slate-700 focus:border-blue-400 w-32 shrink-0 transition">
+                        <option value="😎">😎 Happy</option>
+                        <option value="🥵">🥵 Heiss!</option>
+                        <option value="🍕">🍕 Hungrig</option>
+                        <option value="😴">😴 Müde</option>
+                        <option value="🤩">🤩 Wow!</option>
+                    </select>
+                    <input type="text" id="diary-img" placeholder="Bild-URL (https://...)" class="flex-1 bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-sm font-medium outline-none focus:border-blue-400 transition placeholder:text-slate-400">
+                    <button onclick="app.addDiaryEntry()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-5 py-3 rounded-2xl text-sm active:scale-95 shadow-md transition"><i class="fa-solid fa-paper-plane"></i></button>
+                </div>
+            </div>
+
+            <!-- Feed -->
+            <div id="diary-feed" class="space-y-5 flex-1 overflow-y-auto pb-4 px-1"></div>
+        </section>
+
+        <section id="tab-checklist" class="tab-content p-4">
+            <div class="flex justify-between items-center mb-6 px-2 mt-2">
+                <h2 class="font-heading text-2xl font-extrabold text-slate-900">Orga & Kasse</h2>
+                <div class="flex bg-slate-200/80 p-1.5 rounded-2xl shadow-inner border border-slate-200">
+                    <button onclick="app.toggleChecklistMode('pack')" id="mode-pack-btn" class="text-xs font-bold px-5 py-2 rounded-xl bg-white shadow text-blue-600 transition">Packen</button>
+                    <button onclick="app.toggleChecklistMode('budget')" id="mode-budget-btn" class="text-xs font-bold px-5 py-2 rounded-xl text-slate-500 transition">Kasse</button>
+                </div>
+            </div>
+
+            <!-- PACKEN -->
+            <div id="mode-pack">
+                <div class="bg-gradient-to-br from-slate-800 to-slate-900 rounded-[2rem] p-5 shadow-lg mb-6 text-white border border-slate-700">
+                    <h3 class="font-extrabold text-base mb-4 flex items-center justify-between border-b border-slate-700 pb-3">
+                        <span class="flex items-center gap-2"><i class="fa-solid fa-truck-ramp-box text-blue-400"></i> RAV4 Lade-Master</span>
+                        <span class="text-[10px] bg-blue-600 px-2.5 py-1 rounded-lg font-mono font-bold tracking-widest">HYBRID</span>
+                    </h3>
+                    <ul class="text-xs space-y-3.5 text-slate-300 font-medium">
+                        <li class="flex items-start gap-3"><div class="bg-white/10 p-1.5 rounded-lg shrink-0 mt-0.5"><i class="fa-solid fa-battery-half text-green-400"></i></div> <span class="leading-snug"><b>Batterielüftung:</b> Die Schlitze seitlich der Rückbank NICHT mit Decken oder Jacken blockieren! Brandgefahr.</span></li>
+                        <li class="flex items-start gap-3"><div class="bg-white/10 p-1.5 rounded-lg shrink-0 mt-0.5"><i class="fa-solid fa-layer-group text-blue-400"></i></div> <span class="leading-snug"><b>Ladeboden:</b> Legt den Doppelboden auf die <i>untere</i> Stufe, um mehr Höhe zu haben.</span></li>
+                        <li class="flex items-start gap-3"><div class="bg-white/10 p-1.5 rounded-lg shrink-0 mt-0.5"><i class="fa-solid fa-suitcase text-yellow-400"></i></div> <span class="leading-snug"><b>1-Nacht-Tasche:</b> Separate Tasche für 4 Pers. für Orvieto als ALLERLETZTES obenauf packen! Die grossen Koffer bleiben im Auto.</span></li>
+                    </ul>
+                </div>
+
+                <div class="flex justify-between items-end mb-3 px-2">
+                    <p class="text-sm font-extrabold text-slate-800" id="progress-text">0/0 erledigt</p>
+                    <button onclick="app.confirmResetChecklist()" class="text-xs text-slate-500 font-bold bg-white border border-slate-200 hover:bg-slate-50 px-4 py-2 rounded-full transition shadow-sm"><i class="fa-solid fa-rotate-right mr-1"></i> Reset</button>
+                </div>
+                <div class="w-full bg-slate-200/70 rounded-full h-3 mb-6 overflow-hidden shadow-inner border border-slate-200">
+                    <div id="progress-bar" class="bg-blue-600 h-3 rounded-full transition-all duration-500 shadow-sm relative overflow-hidden" style="width: 0%">
+                        <div class="absolute inset-0 bg-white/20" style="background-image: linear-gradient(45deg,rgba(255,255,255,.15) 25%,transparent 25%,transparent 50%,rgba(255,255,255,.15) 50%,rgba(255,255,255,.15) 75%,transparent 75%,transparent); background-size: 1rem 1rem;"></div>
+                    </div>
+                </div>
+
+                <div id="checklist-container" class="space-y-4"></div>
+            </div>
+
+            <!-- KASSE -->
+            <div id="mode-budget" class="hidden">
+                <div class="bg-white rounded-[2rem] shadow-sm border border-slate-100 p-5 mb-5">
+                    <div class="flex gap-3 mb-4">
+                        <select id="expense-category" class="bg-slate-50 border border-slate-200 rounded-2xl px-2 py-3 text-sm font-medium outline-none focus:border-blue-400 transition text-slate-700 w-16 shrink-0 text-center">
+                            <option value="🍕">🍕</option>
+                            <option value="⛽">⛽</option>
+                            <option value="🎫">🎫</option>
+                            <option value="🎟️">🎟️</option>
+                            <option value="🍦">🍦</option>
+                            <option value="🛒">🛒</option>
+                        </select>
+                        <input type="text" id="expense-desc" placeholder="Was? (z.B. Pizza, Maut)" class="flex-1 bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-sm font-medium outline-none focus:border-blue-400 transition placeholder:text-slate-400">
+                        <input type="number" id="expense-amount" placeholder="€ Betrag" class="w-24 bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-sm font-medium outline-none focus:border-blue-400 transition text-center font-mono placeholder:text-slate-400 placeholder:font-sans">
+                    </div>
+                    <button onclick="app.addExpense()" class="w-full bg-green-600 hover:bg-green-700 text-white font-extrabold py-3.5 rounded-2xl text-sm active:scale-[0.98] transition shadow-md"><i class="fa-solid fa-plus mr-1.5"></i> Ausgabe hinzufügen</button>
+                </div>
+                <div class="bg-slate-900 text-white rounded-[2rem] p-6 shadow-xl mb-6 flex justify-between items-center relative overflow-hidden border border-slate-700">
+                    <i class="fa-solid fa-piggy-bank absolute -right-4 -bottom-4 text-7xl text-slate-800 opacity-60"></i>
+                    <span class="text-sm font-bold text-slate-300 relative z-10 tracking-wide uppercase">Reisekasse Total:</span>
+                    <span class="text-3xl font-extrabold text-green-400 relative z-10 font-mono tracking-tight drop-shadow-md" id="expense-total">€ 0.00</span>
+                </div>
+                <div id="expense-list" class="space-y-3 mb-8"></div>
+                <button onclick="app.openModal('expenses')" class="w-full text-xs text-slate-400 font-bold underline text-center block pb-4 hover:text-slate-600 transition"><i class="fa-solid fa-trash-can mr-1"></i> Gesamte Kasse leeren</button>
+            </div>
+        </section>
+
+        <section id="tab-hacks" class="tab-content p-4">
+            <h2 class="font-heading text-2xl font-extrabold text-slate-900 mb-6 px-2 mt-2">Insider Hacks</h2>
+            
+            <div class="space-y-5">
+                
+                <!-- Wind Hack -->
+                <div class="bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden">
+                    <div class="bg-gradient-to-r from-cyan-500 to-blue-500 px-5 py-4 text-white flex items-center justify-between">
+                        <div class="flex items-center gap-3"><i class="fa-solid fa-wind text-2xl drop-shadow-md"></i><h3 class="font-extrabold text-base">Der Salento Wind-Kompass</h3></div>
+                    </div>
+                    <div class="p-5 bg-cyan-50/20">
+                        <p class="text-xs text-slate-600 font-medium mb-4 leading-relaxed">Im Salento entscheidet <b>nur der Wind</b>, ob das Wasser karibisch flach ist oder hohe Wellen hat. Was weht heute?</p>
+                        <div class="flex gap-3">
+                            <button onclick="app.showWindHack('scirocco')" class="flex-1 bg-white border border-cyan-200 text-cyan-800 font-bold py-3.5 rounded-2xl text-xs shadow-sm hover:bg-cyan-50 active:scale-95 transition"><i class="fa-solid fa-arrow-up text-red-400 text-sm mb-1 block"></i> Scirocco (Süd)</button>
+                            <button onclick="app.showWindHack('tramontana')" class="flex-1 bg-white border border-cyan-200 text-cyan-800 font-bold py-3.5 rounded-2xl text-xs shadow-sm hover:bg-cyan-50 active:scale-95 transition"><i class="fa-solid fa-arrow-down text-blue-500 text-sm mb-1 block"></i> Tramontana (Nord)</button>
+                        </div>
+                        <div id="wind-result" class="hidden mt-4 p-4 bg-white rounded-2xl border border-cyan-100 text-xs text-slate-800 font-medium shadow-sm leading-relaxed"></div>
+                    </div>
+                </div>
+
+                <!-- Müll Hack (NEW) -->
+                <div class="bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden">
+                    <div class="bg-emerald-600 px-5 py-4 text-white flex items-center gap-3"><i class="fa-solid fa-recycle text-2xl drop-shadow-md"></i><h3 class="font-extrabold text-base">Müll-Chaos (Raccolta)</h3></div>
+                    <div class="p-5 text-xs text-slate-600 font-medium leading-relaxed space-y-3">
+                        <p>Italien hat ein extrem strenges Mülltrennungssystem (Raccolta Differenziata). Es drohen hunderte Euro Strafe bei der Unterkunft!</p>
+                        <ul class="space-y-2 bg-slate-50 p-3 rounded-xl border border-slate-100">
+                            <li class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-amber-800 shrink-0"></span> <b>Umido/Organico:</b> Essensreste, Bio</li>
+                            <li class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-yellow-400 shrink-0 border border-slate-300"></span> <b>Plastica/Metallo:</b> Plastik & Dosen</li>
+                            <li class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-blue-500 shrink-0"></span> <b>Carta:</b> Papier & Pappe</li>
+                            <li class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-gray-500 shrink-0"></span> <b>Secco/Indifferenziato:</b> Restmüll</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Handschuh Hack -->
+                <div class="bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden">
+                    <div class="bg-teal-500 px-5 py-4 text-white flex items-center gap-3"><i class="fa-solid fa-apple-whole text-2xl drop-shadow-md"></i><h3 class="font-extrabold text-base">Der Supermarkt-Handschuh</h3></div>
+                    <div class="p-5 text-xs text-slate-600 font-medium leading-relaxed">
+                        <p class="bg-teal-50 p-3 rounded-xl border border-teal-100 text-teal-900"><i class="fa-solid fa-triangle-exclamation text-teal-600 mr-1"></i> Berührt Obst und Gemüse <b>niemals</b> mit blossen Händen! Zieht in Supermärkten (Conad, Coop) zwingend die bereitgestellten Plastikhandschuhe an, bevor ihr abwiegt.</p>
+                    </div>
+                </div>
+
+                <!-- Siesta (Riposino) -->
+                <div class="bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden">
+                    <div class="bg-indigo-500 px-5 py-4 text-white flex items-center gap-3"><i class="fa-solid fa-store-slash text-2xl drop-shadow-md"></i><h3 class="font-extrabold text-base">Il Riposino (Siesta)</h3></div>
+                    <div class="p-5 text-xs text-slate-600 font-medium leading-relaxed">
+                        <p>Besonders im Salento macht zwischen <b>13:00 und 16:30 Uhr</b> fast alles dicht! Kauft Wasser und Snacks für den Strand zwingend am Vormittag. Es hat wirklich *alles* geschlossen.</p>
+                    </div>
+                </div>
+
+                <!-- Gelato Code -->
+                <div class="bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden">
+                    <div class="bg-pink-500 px-5 py-4 text-white flex items-center gap-3"><i class="fa-solid fa-ice-cream text-2xl drop-shadow-md"></i><h3 class="font-extrabold text-base">Der "Gelato" Code</h3></div>
+                    <div class="p-5 text-xs text-slate-600 font-medium leading-relaxed space-y-2">
+                        <p>Wie erkennt ihr echtes Eis (Artigianale)?</p>
+                        <ul class="list-disc pl-5 space-y-1.5 mt-2">
+                            <li><b>Keine bunten Berge!</b> Echtes Eis ist flach in der Wanne (oft sogar unter Metalldeckeln).</li>
+                            <li><b>Der Pistazien-Test:</b> Echtes Pistazieneis ist blassgrün bis bräunlich. Ist es neongrün? Touristenfalle!</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Kaffee Knigge & Scontrino -->
+                <div class="bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden">
+                    <div class="bg-amber-700 px-5 py-4 text-white flex items-center gap-3"><i class="fa-solid fa-mug-hot text-2xl drop-shadow-md"></i><h3 class="font-extrabold text-base">Kaffee & Scontrino</h3></div>
+                    <div class="p-5 text-xs text-slate-600 font-medium leading-relaxed space-y-3">
+                        <ul class="list-disc pl-5 space-y-2">
+                            <li><b>Die Scontrino-Regel:</b> In einer Bar geht man zuerst an die Kasse, zahlt, nimmt den Bon (Scontrino) und legt diesen mit 10-20 Cent Trinkgeld auf den Tresen. Dann bestellt man erst!</li>
+                            <li><b>Al banco:</b> Kaffee im Stehen am Tresen kostet ca. 1,20€. Setzt ihr euch hin (Tischservice), kostet es oft 3-5€!</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Nasoni -->
+                <div class="bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden">
+                    <div class="bg-blue-400 px-5 py-4 text-white flex items-center gap-3"><i class="fa-solid fa-droplet text-2xl drop-shadow-md"></i><h3 class="font-extrabold text-base">Nasoni: Gratis Wasser</h3></div>
+                    <div class="p-5 text-xs text-slate-600 font-medium leading-relaxed"><p>Kauft in Rom kein Wasser! Es gibt über 2.500 gusseiserne Trinkbrunnen (Nasoni). <b>Tipp:</b> Loch unten zuhalten, dann spritzt das kalte Trinkwasser oben aus dem kleinen Loch.</p></div>
+                </div>
+
+                <!-- Maut -->
+                <div class="bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden">
+                    <div class="bg-yellow-400 px-5 py-4 text-slate-900 flex items-center gap-3"><i class="fa-solid fa-cash-register text-2xl drop-shadow-md"></i><h3 class="font-extrabold text-base">Maut1.de VIP-Spur</h3></div>
+                    <div class="p-5 text-xs text-slate-600 font-medium leading-relaxed">
+                        <p>Box <b>zwingend an die Frontscheibe</b> kleben!</p>
+                        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 mt-3 shadow-inner">
+                            <span class="text-yellow-700 font-extrabold bg-yellow-100 px-2 py-0.5 rounded-md block mb-2 w-fit uppercase tracking-wider">NUR GELBE SPUREN (Telepass)</span>
+                            Max 30 km/h fahren. Box piept, Schranke öffnet. <b>Kein Ticket ziehen!</b> Mind. 4m Abstand halten, falls der Vordermann abbremst!
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SOS Center mit TTS -->
+            <div class="bg-red-50 rounded-[2rem] border border-red-200 overflow-hidden mt-8 shadow-sm">
+                <div class="p-5">
+                    <h3 class="font-extrabold text-red-900 text-base mb-4 flex items-center gap-2"><i class="fa-solid fa-truck-medical text-xl"></i> Notfall & SOS Voice</h3>
+                    <div class="flex gap-3 mb-5">
+                        <a href="tel:112" class="bg-white border border-red-100 p-3 rounded-2xl text-center flex-1 shadow-sm active:bg-slate-50 active:scale-95 transition"><span class="font-extrabold text-red-600 block text-2xl">112</span><span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mt-1 block">Notruf</span></a>
+                        <a href="tel:803116" class="bg-white border border-red-100 p-3 rounded-2xl text-center flex-1 shadow-sm active:bg-slate-50 active:scale-95 transition"><span class="font-extrabold text-blue-600 block text-2xl">803116</span><span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mt-1 block">ACI Panne</span></a>
+                    </div>
+                    <div class="bg-white p-4 rounded-2xl border border-red-100 text-xs text-slate-700 font-medium shadow-sm">
+                        <p class="text-[10px] text-slate-400 mb-3 uppercase tracking-widest font-extrabold"><i class="fa-solid fa-volume-high text-red-400 mr-1"></i> Audio-Icon antippen:</p>
+                        <div class="space-y-3">
+                            <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                                <div><span class="font-bold text-slate-900">Kind hat Fieber</span> <br><i class="text-slate-500 font-normal">"Mio figlio ha la febbre"</i></div>
+                                <button onclick="app.speak('Mio figlio ha la febbre')" class="w-10 h-10 bg-red-50 hover:bg-red-100 text-red-600 rounded-full flex items-center justify-center active:scale-90 transition border border-red-100"><i class="fa-solid fa-volume-high"></i></button>
+                            </div>
+                            <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                                <div><span class="font-bold text-slate-900">Quallenstich</span> <br><i class="text-slate-500 font-normal">"Puntura di medusa"</i></div>
+                                <button onclick="app.speak('Puntura di medusa')" class="w-10 h-10 bg-red-50 hover:bg-red-100 text-red-600 rounded-full flex items-center justify-center active:scale-90 transition border border-red-100"><i class="fa-solid fa-volume-high"></i></button>
+                            </div>
+                            <div class="flex justify-between items-center pt-1">
+                                <div><span class="font-bold text-slate-900">Wir brauchen einen Arzt</span> <br><i class="text-slate-500 font-normal">"Abbiamo bisogno di un medico"</i></div>
+                                <button onclick="app.speak('Abbiamo bisogno di un medico')" class="w-10 h-10 bg-red-50 hover:bg-red-100 text-red-600 rounded-full flex items-center justify-center active:scale-90 transition border border-red-100"><i class="fa-solid fa-volume-high"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="tab-spiele" class="tab-content playful-bg min-h-full">
+            <div class="p-5">
+                <h2 class="font-playful text-3xl font-extrabold text-blue-900 mb-6 px-1 drop-shadow-sm flex items-center gap-2 mt-1">Spiele-Box <span class="text-4xl">🎲</span></h2>
+                
+                <div class="flex p-2 rounded-2xl mb-6 text-xs font-extrabold overflow-x-auto scrollbar-hide snap-x bg-white/70 backdrop-blur-md shadow-sm border border-blue-100">
+                    <button onclick="app.switchGame('game-bingo', this)" class="game-btn snap-start shrink-0 px-5 btn-bubbly active-game py-3">Auto-Bingo</button>
+                    <button onclick="app.switchGame('game-whoami', this)" class="game-btn snap-start shrink-0 px-5 btn-bubbly py-3 text-slate-500 ml-2">Wer bin ich?</button>
+                    <button onclick="app.switchGame('game-soundboard', this)" class="game-btn snap-start shrink-0 px-5 btn-bubbly py-3 text-slate-500 ml-2">🇮🇹 Trainer</button>
+                    <button onclick="app.switchGame('game-roulette', this)" class="game-btn snap-start shrink-0 px-5 btn-bubbly py-3 text-slate-500 ml-2">🍦 Roulette</button>
+                    <button onclick="app.switchGame('game-plates', this)" class="game-btn snap-start shrink-0 px-5 btn-bubbly py-3 text-slate-500 ml-2">Kennzeichen</button>
+                    <button onclick="app.switchGame('game-tricolore', this)" class="game-btn snap-start shrink-0 px-5 btn-bubbly py-3 text-slate-500 ml-2">Tricolore</button>
+                    <button onclick="app.switchGame('game-gelato', this)" class="game-btn snap-start shrink-0 px-5 btn-bubbly py-3 text-slate-500 ml-2">Eis-Tracker</button>
+                    <button onclick="app.switchGame('game-quiz', this)" class="game-btn snap-start shrink-0 px-5 btn-bubbly py-3 text-slate-500 ml-2">Quiz</button>
+                </div>
+                
+                <!-- NEW: Wer bin ich? (Chi sono?) -->
+                <div id="game-whoami" class="game-view hidden">
+                    <div class="bg-white rounded-[2rem] shadow-lg border-b-[6px] border-indigo-200 p-6 text-center">
+                        <h3 class="font-playful text-2xl text-indigo-600 mb-2">Chi sono? 🎭</h3>
+                        <p class="text-xs text-slate-500 font-medium mb-6">Halt das Handy an die Stirn! Die anderen müssen dir Tipps geben, wer du bist.</p>
+                        
+                        <div class="flip-card mx-auto w-[250px] mb-6" onclick="this.classList.toggle('is-flipped')">
+                            <div class="flip-card-inner">
+                                <div class="flip-card-front">
+                                    <span class="text-6xl mb-3 drop-shadow-md">🤔</span>
+                                    <h4 class="font-playful text-xl font-bold">Wer bin ich?</h4>
+                                    <p class="text-[10px] mt-2 opacity-80 uppercase tracking-wider font-bold">Tippen zum Aufdecken</p>
+                                </div>
+                                <div class="flip-card-back">
+                                    <span id="whoami-emoji" class="text-7xl mb-2 drop-shadow-sm"></span>
+                                    <h4 id="whoami-text" class="font-playful text-2xl font-bold text-indigo-700"></h4>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <button onclick="app.nextWhoAmI()" class="w-full bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-playful text-lg py-4 rounded-2xl shadow-md active:scale-95 transition border-b-4 border-indigo-700">Neue Person!</button>
+                    </div>
+                </div>
+
+                <!-- Gelato Roulette -->
+                <div id="game-roulette" class="game-view hidden">
+                    <div class="bg-white rounded-[2rem] shadow-lg border-b-[6px] border-pink-200 p-7 text-center">
+                        <h3 class="font-playful text-2xl text-pink-600 mb-2">Eis-Roulette 🎡</h3>
+                        <p class="text-xs text-slate-500 font-medium mb-8">Könnt ihr euch nicht entscheiden? Das Rad wählt!</p>
+                        
+                        <div class="relative w-56 h-56 mx-auto mb-8 flex items-center justify-center bg-pink-50 rounded-full border-[6px] border-pink-100 shadow-inner">
+                            <span id="roulette-result" class="text-7xl animate-pulse drop-shadow-md">🍦</span>
+                        </div>
+                        
+                        <button onclick="app.spinRoulette()" class="w-full bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-400 hover:to-rose-400 text-white font-playful text-xl py-4 rounded-2xl shadow-md active:scale-[0.98] transition border-b-[6px] border-pink-700">DREHEN!</button>
+                        
+                        <div id="roulette-text" class="mt-6 font-extrabold text-slate-700 text-base hidden">
+                            <span class="text-pink-500 text-lg" id="roulette-person"></span> wählt zuerst: <br><span class="text-2xl text-blue-600 font-playful mt-2 block" id="roulette-flavor"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bingo -->
+                <div id="game-bingo" class="game-view block">
+                    <p class="text-xs text-blue-900 font-bold mb-5 px-1 leading-snug bg-blue-100/60 p-3 rounded-2xl border border-blue-200 shadow-sm"><i class="fa-solid fa-circle-info text-blue-500 mr-1"></i> Tippt an, was ihr seht! Wer zuerst alle hat, gewinnt ein Eis.</p>
+                    <div class="grid grid-cols-3 gap-3 mb-6">
+                        <div class="bingo-item bg-white rounded-2xl shadow-sm border-b-4 border-slate-200 p-3 flex flex-col items-center justify-center cursor-pointer aspect-square transition duration-200 active:translate-y-1 active:border-b-0 hover:bg-slate-50" onclick="app.toggleBingo(this)"><span class="text-4xl mb-2 drop-shadow-sm">🚓</span><span class="text-[10px] font-extrabold text-slate-700 font-playful tracking-wide">Polizia</span></div>
+                        <div class="bingo-item bg-white rounded-2xl shadow-sm border-b-4 border-slate-200 p-3 flex flex-col items-center justify-center cursor-pointer aspect-square transition duration-200 active:translate-y-1 active:border-b-0 hover:bg-slate-50" onclick="app.toggleBingo(this)"><span class="text-4xl mb-2 drop-shadow-sm">🛵</span><span class="text-[10px] font-extrabold text-slate-700 font-playful tracking-wide">Vespa</span></div>
+                        <div class="bingo-item bg-white rounded-2xl shadow-sm border-b-4 border-slate-200 p-3 flex flex-col items-center justify-center cursor-pointer aspect-square transition duration-200 active:translate-y-1 active:border-b-0 hover:bg-slate-50" onclick="app.toggleBingo(this)"><span class="text-4xl mb-2 drop-shadow-sm">☕</span><span class="text-[10px] font-extrabold text-slate-700 font-playful tracking-wide">Autogrill</span></div>
+                        <div class="bingo-item bg-white rounded-2xl shadow-sm border-b-4 border-slate-200 p-3 flex flex-col items-center justify-center cursor-pointer aspect-square transition duration-200 active:translate-y-1 active:border-b-0 hover:bg-slate-50" onclick="app.toggleBingo(this)"><span class="text-4xl mb-2 drop-shadow-sm">🌲</span><span class="text-[10px] font-extrabold text-slate-700 font-playful tracking-wide">Zypresse</span></div>
+                        <div class="bingo-item bg-white rounded-2xl shadow-sm border-b-4 border-slate-200 p-3 flex flex-col items-center justify-center cursor-pointer aspect-square transition duration-200 active:translate-y-1 active:border-b-0 hover:bg-slate-50" onclick="app.toggleBingo(this)"><span class="text-4xl mb-2 drop-shadow-sm">🛺</span><span class="text-[10px] font-extrabold text-slate-700 font-playful tracking-wide">Ape</span></div>
+                        <div class="bingo-item bg-white rounded-2xl shadow-sm border-b-4 border-slate-200 p-3 flex flex-col items-center justify-center cursor-pointer aspect-square transition duration-200 active:translate-y-1 active:border-b-0 hover:bg-slate-50" onclick="app.toggleBingo(this)"><span class="text-4xl mb-2 drop-shadow-sm">🇨🇭</span><span class="text-[10px] font-extrabold text-slate-700 font-playful tracking-wide">CH-Auto</span></div>
+                        <div class="bingo-item bg-white rounded-2xl shadow-sm border-b-4 border-slate-200 p-3 flex flex-col items-center justify-center cursor-pointer aspect-square transition duration-200 active:translate-y-1 active:border-b-0 hover:bg-slate-50" onclick="app.toggleBingo(this)"><span class="text-4xl mb-2 drop-shadow-sm">🚗</span><span class="text-[10px] font-extrabold text-slate-700 font-playful tracking-wide">Fiat 500</span></div>
+                        <div class="bingo-item bg-white rounded-2xl shadow-sm border-b-4 border-slate-200 p-3 flex flex-col items-center justify-center cursor-pointer aspect-square transition duration-200 active:translate-y-1 active:border-b-0 hover:bg-slate-50" onclick="app.toggleBingo(this)"><span class="text-4xl mb-2 drop-shadow-sm">⛱️</span><span class="text-[10px] font-extrabold text-slate-700 font-playful tracking-wide">Schirm</span></div>
+                        <div class="bingo-item bg-white rounded-2xl shadow-sm border-b-4 border-slate-200 p-3 flex flex-col items-center justify-center cursor-pointer aspect-square transition duration-200 active:translate-y-1 active:border-b-0 hover:bg-slate-50" onclick="app.toggleBingo(this)"><span class="text-4xl mb-2 drop-shadow-sm">🎫</span><span class="text-[10px] font-extrabold text-slate-700 font-playful tracking-wide">Mautstelle</span></div>
+                        <div class="bingo-item bg-white rounded-2xl shadow-sm border-b-4 border-slate-200 p-3 flex flex-col items-center justify-center cursor-pointer aspect-square transition duration-200 active:translate-y-1 active:border-b-0 hover:bg-slate-50" onclick="app.toggleBingo(this)"><span class="text-4xl mb-2 drop-shadow-sm">🍕</span><span class="text-[10px] font-extrabold text-slate-700 font-playful tracking-wide">Pizza Schild</span></div>
+                        <div class="bingo-item bg-white rounded-2xl shadow-sm border-b-4 border-slate-200 p-3 flex flex-col items-center justify-center cursor-pointer aspect-square transition duration-200 active:translate-y-1 active:border-b-0 hover:bg-slate-50" onclick="app.toggleBingo(this)"><span class="text-4xl mb-2 drop-shadow-sm">🛣️</span><span class="text-[10px] font-extrabold text-slate-700 font-playful tracking-wide">Tunnel</span></div>
+                        <div class="bingo-item bg-white rounded-2xl shadow-sm border-b-4 border-slate-200 p-3 flex flex-col items-center justify-center cursor-pointer aspect-square transition duration-200 active:translate-y-1 active:border-b-0 hover:bg-slate-50" onclick="app.toggleBingo(this)"><span class="text-4xl mb-2 drop-shadow-sm">🌻</span><span class="text-[10px] font-extrabold text-slate-700 font-playful tracking-wide">Sonnenblume</span></div>
+                    </div>
+                    <button onclick="app.resetBingo()" class="w-full bg-white text-slate-700 rounded-2xl py-4 text-sm font-extrabold shadow-sm border-b-[4px] border-slate-200 active:translate-y-1 active:border-b-0 hover:bg-slate-50 transition"><i class="fa-solid fa-rotate-right mr-1.5"></i> Bingo neu starten</button>
+                </div>
+
+                <!-- Italienisch Trainer (Soundboard) -->
+                <div id="game-soundboard" class="game-view hidden">
+                    <div class="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-[2rem] shadow-lg border-b-[6px] border-indigo-800 p-6">
+                        <h3 class="font-playful font-extrabold text-2xl text-white mb-1 text-center">Kids Trainer 🗣️</h3>
+                        <p class="text-xs text-indigo-100 font-medium mb-6 text-center">Tippt auf die Knöpfe und sprecht nach!</p>
+                        <div class="grid grid-cols-2 gap-3.5">
+                            <button onclick="app.speak('Mamma mia!')" class="bg-white border-b-4 border-slate-200 p-4 rounded-2xl shadow-sm active:translate-y-1 active:border-b-0 hover:bg-slate-50 transition text-center flex flex-col items-center justify-center gap-1.5">
+                                <span class="text-3xl drop-shadow-sm">😱</span><span class="text-xs font-extrabold text-indigo-900 font-playful">Mamma mia!</span><span class="text-[9px] text-slate-500 font-bold uppercase tracking-wide mt-1">Oh mein Gott!</span>
+                            </button>
+                            <button onclick="app.speak('Un gelato, per favore!')" class="bg-white border-b-4 border-slate-200 p-4 rounded-2xl shadow-sm active:translate-y-1 active:border-b-0 hover:bg-slate-50 transition text-center flex flex-col items-center justify-center gap-1.5">
+                                <span class="text-3xl drop-shadow-sm">🍦</span><span class="text-xs font-extrabold text-indigo-900 font-playful">Un gelato...</span><span class="text-[9px] text-slate-500 font-bold uppercase tracking-wide mt-1">Ein Eis bitte</span>
+                            </button>
+                            <button onclick="app.speak('Andiamo!')" class="bg-white border-b-4 border-slate-200 p-4 rounded-2xl shadow-sm active:translate-y-1 active:border-b-0 hover:bg-slate-50 transition text-center flex flex-col items-center justify-center gap-1.5">
+                                <span class="text-3xl drop-shadow-sm">🚀</span><span class="text-xs font-extrabold text-indigo-900 font-playful">Andiamo!</span><span class="text-[9px] text-slate-500 font-bold uppercase tracking-wide mt-1">Los geht's!</span>
+                            </button>
+                            <button onclick="app.speak('Che caldo!')" class="bg-white border-b-4 border-slate-200 p-4 rounded-2xl shadow-sm active:translate-y-1 active:border-b-0 hover:bg-slate-50 transition text-center flex flex-col items-center justify-center gap-1.5">
+                                <span class="text-3xl drop-shadow-sm">🥵</span><span class="text-xs font-extrabold text-indigo-900 font-playful">Che caldo!</span><span class="text-[9px] text-slate-500 font-bold uppercase tracking-wide mt-1">Wie heiss!</span>
+                            </button>
+                            <button onclick="app.speak('Ho fame!')" class="bg-white border-b-4 border-slate-200 p-4 rounded-2xl shadow-sm active:translate-y-1 active:border-b-0 hover:bg-slate-50 transition text-center flex flex-col items-center justify-center gap-1.5">
+                                <span class="text-3xl drop-shadow-sm">🍕</span><span class="text-xs font-extrabold text-indigo-900 font-playful">Ho fame!</span><span class="text-[9px] text-slate-500 font-bold uppercase tracking-wide mt-1">Ich habe Hunger</span>
+                            </button>
+                            <button onclick="app.speak('Buongiorno!')" class="bg-white border-b-4 border-slate-200 p-4 rounded-2xl shadow-sm active:translate-y-1 active:border-b-0 hover:bg-slate-50 transition text-center flex flex-col items-center justify-center gap-1.5">
+                                <span class="text-3xl drop-shadow-sm">👋</span><span class="text-xs font-extrabold text-indigo-900 font-playful">Buongiorno!</span><span class="text-[9px] text-slate-500 font-bold uppercase tracking-wide mt-1">Guten Morgen</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Kennzeichen -->
+                <div id="game-plates" class="game-view hidden">
+                    <div class="bg-white rounded-[2rem] shadow-sm border-b-[6px] border-slate-200 p-6">
+                        <h3 class="font-playful font-extrabold text-xl text-slate-800 mb-1">Kennzeichen-Jagd 🚙</h3>
+                        <p class="text-xs text-slate-500 font-medium mb-6">Sammelt alle Länder auf der Autostrada!</p>
+                        <div class="grid grid-cols-2 gap-3.5" id="plates-grid">
+                            <label class="flex items-center gap-3 p-3.5 bg-slate-50 rounded-2xl border-b-[4px] border-slate-200 cursor-pointer check-wrapper transition active:translate-y-1 active:border-b-0 hover:bg-slate-100">
+                                <input type="checkbox" class="sr-only" onchange="app.togglePlate(this)">
+                                <div class="w-7 h-7 border-2 border-slate-300 rounded-lg bg-white flex items-center justify-center"><svg class="w-4 h-4 text-white hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg></div>
+                                <span class="text-xs font-extrabold text-slate-700 font-playful tracking-wide">🇨🇭 Schweiz</span>
+                            </label>
+                            <label class="flex items-center gap-3 p-3.5 bg-slate-50 rounded-2xl border-b-[4px] border-slate-200 cursor-pointer check-wrapper transition active:translate-y-1 active:border-b-0 hover:bg-slate-100">
+                                <input type="checkbox" class="sr-only" onchange="app.togglePlate(this)">
+                                <div class="w-7 h-7 border-2 border-slate-300 rounded-lg bg-white flex items-center justify-center"><svg class="w-4 h-4 text-white hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg></div>
+                                <span class="text-xs font-extrabold text-slate-700 font-playful tracking-wide">🇮🇹 Italien</span>
+                            </label>
+                            <label class="flex items-center gap-3 p-3.5 bg-slate-50 rounded-2xl border-b-[4px] border-slate-200 cursor-pointer check-wrapper transition active:translate-y-1 active:border-b-0 hover:bg-slate-100">
+                                <input type="checkbox" class="sr-only" onchange="app.togglePlate(this)">
+                                <div class="w-7 h-7 border-2 border-slate-300 rounded-lg bg-white flex items-center justify-center"><svg class="w-4 h-4 text-white hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg></div>
+                                <span class="text-xs font-extrabold text-slate-700 font-playful tracking-wide">🇩🇪 Deutschl.</span>
+                            </label>
+                            <label class="flex items-center gap-3 p-3.5 bg-slate-50 rounded-2xl border-b-[4px] border-slate-200 cursor-pointer check-wrapper transition active:translate-y-1 active:border-b-0 hover:bg-slate-100">
+                                <input type="checkbox" class="sr-only" onchange="app.togglePlate(this)">
+                                <div class="w-7 h-7 border-2 border-slate-300 rounded-lg bg-white flex items-center justify-center"><svg class="w-4 h-4 text-white hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg></div>
+                                <span class="text-xs font-extrabold text-slate-700 font-playful tracking-wide">🇦🇹 Österreich</span>
+                            </label>
+                            <label class="flex items-center gap-3 p-3.5 bg-slate-50 rounded-2xl border-b-[4px] border-slate-200 cursor-pointer check-wrapper transition active:translate-y-1 active:border-b-0 hover:bg-slate-100">
+                                <input type="checkbox" class="sr-only" onchange="app.togglePlate(this)">
+                                <div class="w-7 h-7 border-2 border-slate-300 rounded-lg bg-white flex items-center justify-center"><svg class="w-4 h-4 text-white hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg></div>
+                                <span class="text-xs font-extrabold text-slate-700 font-playful tracking-wide">🇳🇱 Holland</span>
+                            </label>
+                            <label class="flex items-center gap-3 p-3.5 bg-slate-50 rounded-2xl border-b-[4px] border-slate-200 cursor-pointer check-wrapper transition active:translate-y-1 active:border-b-0 hover:bg-slate-100">
+                                <input type="checkbox" class="sr-only" onchange="app.togglePlate(this)">
+                                <div class="w-7 h-7 border-2 border-slate-300 rounded-lg bg-white flex items-center justify-center"><svg class="w-4 h-4 text-white hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg></div>
+                                <span class="text-xs font-extrabold text-slate-700 font-playful tracking-wide">🇫🇷 Frankreich</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tricolore -->
+                <div id="game-tricolore" class="game-view hidden">
+                    <div class="bg-white rounded-[2rem] shadow-sm border-b-[6px] border-slate-200 p-6 text-center">
+                        <h3 class="font-playful font-extrabold text-xl text-slate-800 mb-1">Tricolore Zähler 🇮🇹</h3>
+                        <p class="text-xs text-slate-500 font-medium mb-6">Sammelt je 10 Autos in den Flaggen-Farben!</p>
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between bg-green-50 p-3.5 rounded-2xl border-b-4 border-green-200 shadow-inner">
+                                <div class="w-12 h-12 bg-green-600 rounded-full flex items-center justify-center text-white text-xl shadow-sm"><i class="fa-solid fa-car"></i></div>
+                                <span class="font-mono font-extrabold text-green-700 text-4xl w-14 text-center" id="count-green">0</span>
+                                <button onclick="app.updateTricolore('green')" class="w-14 h-14 rounded-full bg-green-200 hover:bg-green-300 text-green-800 font-extrabold text-2xl active:scale-90 transition shadow-sm">+</button>
+                            </div>
+                            <div class="flex items-center justify-between bg-slate-50 p-3.5 rounded-2xl border-b-4 border-slate-200 shadow-inner">
+                                <div class="w-12 h-12 bg-white border-2 border-slate-300 rounded-full flex items-center justify-center text-slate-600 text-xl shadow-sm"><i class="fa-solid fa-car"></i></div>
+                                <span class="font-mono font-extrabold text-slate-700 text-4xl w-14 text-center" id="count-white">0</span>
+                                <button onclick="app.updateTricolore('white')" class="w-14 h-14 rounded-full bg-slate-200 hover:bg-slate-300 text-slate-800 font-extrabold text-2xl active:scale-90 transition shadow-sm">+</button>
+                            </div>
+                            <div class="flex items-center justify-between bg-red-50 p-3.5 rounded-2xl border-b-4 border-red-200 shadow-inner">
+                                <div class="w-12 h-12 bg-red-600 rounded-full flex items-center justify-center text-white text-xl shadow-sm"><i class="fa-solid fa-car"></i></div>
+                                <span class="font-mono font-extrabold text-red-700 text-4xl w-14 text-center" id="count-red">0</span>
+                                <button onclick="app.updateTricolore('red')" class="w-14 h-14 rounded-full bg-red-200 hover:bg-red-300 text-red-800 font-extrabold text-2xl active:scale-90 transition shadow-sm">+</button>
+                            </div>
+                        </div>
+                        <button onclick="app.openModal('tricolore')" class="w-full mt-8 text-xs text-slate-400 font-bold underline hover:text-slate-600 transition"><i class="fa-solid fa-trash-can mr-1"></i> Zähler zurücksetzen</button>
+                    </div>
+                </div>
+
+                <!-- Gelato Tracker -->
+                <div id="game-gelato" class="game-view hidden">
+                    <div class="bg-white rounded-[2rem] shadow-sm border-b-[6px] border-slate-200 p-6">
+                        <h3 class="font-playful font-extrabold text-xl text-slate-800 text-center mb-6">Wer isst am meisten Eis? 🍦</h3>
+                        <div class="space-y-3.5" id="gelato-list"></div>
+                    </div>
+                </div>
+
+                <!-- Quiz -->
+                <div id="game-quiz" class="game-view hidden">
+                    <div class="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-[2rem] shadow-lg border-b-[6px] border-indigo-800 p-7 text-center min-h-[250px] flex flex-col justify-center relative overflow-hidden">
+                        <i class="fa-solid fa-clipboard-question absolute -left-4 -bottom-4 text-8xl text-white opacity-10"></i>
+                        <h3 class="font-playful font-extrabold text-white text-2xl mb-1 relative z-10">Familien-Quiz 🏆</h3>
+                        <p class="text-xs text-indigo-100 font-medium mb-6 relative z-10">20 knifflige Italien-Fragen!</p>
+                        <div id="quiz-question-container" class="relative z-10">
+                            <p id="quiz-question" class="font-bold text-base text-white mb-6 font-playful leading-snug">Drückt Start für die erste Frage!</p>
+                            <div id="quiz-answers" class="grid grid-cols-1 gap-3">
+                                <button onclick="app.startQuiz()" class="bg-white hover:bg-slate-50 text-indigo-700 font-extrabold py-4 rounded-2xl text-sm shadow-md active:scale-95 transition border-b-[4px] border-indigo-200 font-playful">Quiz Starten</button>
+                            </div>
+                        </div>
+                        <p id="quiz-score" class="text-xs font-bold text-indigo-200 mt-6 relative z-10 bg-indigo-900/50 w-fit mx-auto px-4 py-1.5 rounded-full">Punkte: 0</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="tab-bot" class="tab-content p-4 flex flex-col min-h-full pb-6">
+            <div class="bg-gradient-to-br from-indigo-600 via-blue-700 to-blue-900 rounded-[2rem] p-6 text-white shadow-xl mb-5 shrink-0 relative overflow-hidden border border-blue-400/30">
+                <i class="fa-solid fa-robot absolute -right-4 -bottom-4 text-[90px] opacity-10"></i>
+                <h2 class="font-heading text-2xl font-extrabold flex items-center gap-2 mb-1.5 drop-shadow-md">Luigi AI 10.0 🇮🇹</h2>
+                <p class="text-xs text-blue-100 font-medium leading-relaxed">Ich kenne euch! Sag mir "Diego", "Gabriela", "Miguel" oder frag nach "Kaffee", "Müll", "ZTL" oder "Strand"!</p>
+                
+                <div class="flex gap-2.5 mt-5 overflow-x-auto pb-2 scrollbar-hide snap-x">
+                    <button onclick="app.setChatInput('Was ist das Gelato Geheimnis?')" class="snap-start shrink-0 bg-white/20 backdrop-blur-md px-4 py-2 rounded-xl text-[11px] font-bold border border-white/20 hover:bg-white/30 active:scale-95 transition shadow-sm">Gelato Hack</button>
+                    <button onclick="app.setChatInput('Wie bestelle ich Kaffee?')" class="snap-start shrink-0 bg-white/20 backdrop-blur-md px-4 py-2 rounded-xl text-[11px] font-bold border border-white/20 hover:bg-white/30 active:scale-95 transition shadow-sm">Kaffee-Regeln</button>
+                    <button onclick="app.setChatInput('Wie trenne ich den Müll?')" class="snap-start shrink-0 bg-white/20 backdrop-blur-md px-4 py-2 rounded-xl text-[11px] font-bold border border-white/20 hover:bg-white/30 active:scale-95 transition shadow-sm">Müll-Chaos</button>
+                    <button onclick="app.setChatInput('Supermarkt Hack')" class="snap-start shrink-0 bg-white/20 backdrop-blur-md px-4 py-2 rounded-xl text-[11px] font-bold border border-white/20 hover:bg-white/30 active:scale-95 transition shadow-sm">Supermarkt</button>
+                </div>
+            </div>
+
+            <div id="chat-container" class="flex-1 overflow-y-auto space-y-4 pb-4 px-1">
+                <div class="flex items-end gap-3">
+                    <div class="w-9 h-9 rounded-full bg-gradient-to-tr from-blue-100 to-blue-200 flex items-center justify-center shrink-0 border border-blue-300 shadow-sm text-sm">🤖</div>
+                    <div class="chat-bubble-bot p-4 text-[13px] text-slate-700 font-medium max-w-[85%] leading-relaxed shadow-sm">
+                        Pronti famiglia? Diego, Gabriela, Miguel und Valentina! Ich weiss alles über Kaffee, echtes Gelato, die Mülltrennung (Raccolta) und euren RAV4. Frag mich aus!
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-3 bg-white rounded-2xl border border-slate-200 p-1.5 flex items-center shadow-md shrink-0">
+                <input type="text" id="chat-input" placeholder="Schreib etwas an Luigi..." class="flex-1 bg-transparent px-4 py-3 text-sm outline-none font-medium text-slate-800 placeholder:text-slate-400" onkeypress="if(event.key === 'Enter') app.handleChatSubmit()">
+                <button onclick="app.handleChatSubmit()" class="w-12 h-12 bg-blue-600 hover:bg-blue-700 rounded-xl flex items-center justify-center text-white shrink-0 active:scale-90 transition shadow-sm"><i class="fa-solid fa-paper-plane"></i></button>
+            </div>
+        </section>
+
+    </main>
+
+    <nav class="flex-none glass-nav flex justify-around px-2 py-3 z-50">
+        <button onclick="app.switchTab('tab-route', this)" class="nav-item active flex flex-col items-center w-1/6 group">
+            <i class="fa-solid fa-route text-[22px] mb-1.5 group-active:scale-90 transition-transform"></i><span class="text-[9px] font-extrabold tracking-wide uppercase">Route</span>
+        </button>
+        <button onclick="app.switchTab('tab-diary', this)" class="nav-item flex flex-col items-center w-1/6 group">
+            <i class="fa-solid fa-book-open text-[22px] mb-1.5 group-active:scale-90 transition-transform"></i><span class="text-[9px] font-extrabold tracking-wide uppercase">Tagebuch</span>
+        </button>
+        <button onclick="app.switchTab('tab-checklist', this)" class="nav-item flex flex-col items-center w-1/6 group">
+            <i class="fa-solid fa-wallet text-[22px] mb-1.5 group-active:scale-90 transition-transform"></i><span class="text-[9px] font-extrabold tracking-wide uppercase">Orga</span>
+        </button>
+        <button onclick="app.switchTab('tab-hacks', this)" class="nav-item flex flex-col items-center w-1/6 group">
+            <i class="fa-solid fa-lightbulb text-[22px] mb-1.5 group-active:scale-90 transition-transform"></i><span class="text-[9px] font-extrabold tracking-wide uppercase">Hacks</span>
+        </button>
+        <button onclick="app.switchTab('tab-spiele', this)" class="nav-item flex flex-col items-center w-1/6 group relative">
+            <span class="absolute -top-1 right-2 w-3 h-3 bg-red-500 rounded-full border-2 border-white animate-pulse"></span>
+            <i class="fa-solid fa-gamepad text-[22px] mb-1.5 group-active:scale-90 transition-transform text-purple-500"></i><span class="text-[9px] font-extrabold tracking-wide uppercase text-purple-600">Spiele</span>
+        </button>
+        <button onclick="app.switchTab('tab-bot', this)" class="nav-item flex flex-col items-center w-1/6 group">
+            <i class="fa-solid fa-robot text-[22px] mb-1.5 text-indigo-500 group-active:scale-90 transition-transform drop-shadow-sm"></i><span class="text-[9px] font-extrabold text-indigo-600 tracking-wide uppercase">Luigi</span>
+        </button>
+    </nav>
+
+</div>
+
+<script>
+    const app = {
+        // --- STREAMING_CHUNK:Massive Data Structure (V10) ---
+        checklistData: {
+            "🚨 Abfahrtstag (13.07.)": [
+                { id: "ab1", text: "Müll rausbringen & Kühlschrank leeren" },
+                { id: "ab2", text: "Alle Fenster zu, Rollläden runter" },
+                { id: "ab3", text: "Wasser / Stromkreise / Kaffeemaschine prüfen" },
+                { id: "ab4", text: "Frischer Proviant / Sandwiches in Kühlbox" }
+            ],
+            "🎒 Die 1-Nacht Tasche (Orvieto)": [
+                { id: "o1", text: "4x Zahnbürste & Kulturbeutel" },
+                { id: "o2", text: "4x Schlafanzüge (Pyjamas)" },
+                { id: "o3", text: "4x Frische Kleidung für Tag 2 (Rom)" },
+                { id: "o4", text: "Handy-Ladekabel (fürs B&B)" },
+                { id: "o5", text: "TASCHE ALS LETZTES OBENAUF PACKEN!" }
+            ],
+            "👕 Koffer Diego & Gabriela": [
+                { id: "p1", text: "Unterwäsche & Socken (Je 12-14x)" },
+                { id: "p2", text: "T-Shirts/Tops (Je 8-10x)" },
+                { id: "p3", text: "Kurze Hosen / Röcke (Je 4x)" },
+                { id: "p4", text: "Badesachen & Strandtücher (Je 2x)" },
+                { id: "p5", text: "Bequeme Laufschuhe (Städtetrip Rom!)" },
+                { id: "p6", text: "Schickes Outfit für Abends (Passeggiata)" },
+                { id: "p7", text: "Warmer Pulli/Jacke (Für Lamon in den Bergen!)" }
+            ],
+            "🧸 Koffer Miguel (11) & Valentina (5)": [
+                { id: "k1", text: "UV-Shirts (Sehr wichtig im Süden!)" },
+                { id: "k2", text: "Badehosen/Bikinis (Je 3x zum Wechseln)" },
+                { id: "k3", text: "Kurze Hosen & T-Shirts (Je 10-12x)" },
+                { id: "k4", text: "Wasserschuhe (für Felsen & Seeigel)" },
+                { id: "k5", text: "Käppi/Sonnenhut für beide" },
+                { id: "k6", text: "Warmer Pulli/Hose (Für Lamon!)" }
+            ],
+            "💊 Reiseapotheke & Pflege": [
+                { id: "ap1", text: "Fieberzäpfchen & Dafalgan/Ibuprofen" },
+                { id: "ap2", text: "Vomex / Reisetabletten (gegen Übelkeit im Auto)" },
+                { id: "ap3", text: "Mückenspray & Stichheiler (BiteAway)" },
+                { id: "ap4", text: "Pflaster, Desinfektionsspray & Pinzette" },
+                { id: "ap5", text: "Sonnencreme 50+ & After Sun Lotion" },
+                { id: "ap6", text: "Kohletabletten (Magen-Darm)" }
+            ],
+            "🚗 RAV4 Setup & Technik": [
+                { id: "r0", text: "Maut1-Box VORHER an Frontscheibe kleben!" },
+                { id: "r1", text: "CH-Kleber hinten am Auto anbringen! (Pflicht in IT)" },
+                { id: "r2", text: "4x Warnwesten INNEN im Auto (Pflicht!)" },
+                { id: "r3", text: "Reifendruck & Ölstand geprüft" },
+                { id: "r4", text: "Tablets 100% geladen + Filme OFFLINE gespeichert!" },
+                { id: "r5", text: "Kopfhörer für die Kids" },
+                { id: "r6", text: "Müllbeutel & Feuchttücher (Küchenrolle) ins Auto" }
+            ],
+            "💶 Dokumente & Wichtiges": [
+                { id: "d1", text: "200€ Bargeld für Kaution Apulien abheben!" },
+                { id: "d2", text: "Ausweise & Pässe für alle 4" },
+                { id: "d3", text: "Krankenkassenkarten (EHIC Rückseite prüfen)" },
+                { id: "d4", text: "Grüne Versicherungskarte fürs Auto" },
+                { id: "d6", text: "3-Pol Steckdosenadapter (Schweiz -> Italien)" }
+            ],
+            "🏖️ Strand / Salento-Extras": [
+                { id: "sa1", text: "Strandtasche (gross genug für 4 Handtücher)" },
+                { id: "sa2", text: "Thermosflaschen (für eiskaltes Wasser am Strand)" },
+                { id: "sa3", text: "Sandspielzeug (Schaufel/Förmchen für Valentina)" },
+                { id: "sa4", text: "Taucherbrille / Schnorchel (für Miguel)" }
+            ]
+        },
+        checklistState: JSON.parse(localStorage.getItem('bItal_v10_chk')) || {},
+        expenses: JSON.parse(localStorage.getItem('bItal_v10_exp')) || [],
+        tricoloreState: JSON.parse(localStorage.getItem('bItal_v10_tri')) || { green: 0, white: 0, red: 0 },
+        diaryEntries: JSON.parse(localStorage.getItem('bItal_v10_diary')) || [],
+        
+        gelatoFamily: [
+            { id: "diego", name: "Diego", icon: "👨" },
+            { id: "gabriela", name: "Gabriela", icon: "👩" },
+            { id: "miguel", name: "Miguel (11)", icon: "👦" },
+            { id: "valentina", name: "Valentina (5)", icon: "👧" }
+        ],
+        gelatoCounts: JSON.parse(localStorage.getItem('bItal_v10_ice')) || { diego: 0, gabriela: 0, miguel: 0, valentina: 0 },
+
+        whoAmIData: [
+            { emoji: "⚔️", name: "Ein Gladiator" },
+            { emoji: "🙏", name: "Der Papst" },
+            { emoji: "🍄", name: "Super Mario" },
+            { emoji: "🍕", name: "Ein Pizzabäcker" },
+            { emoji: "🏎️", name: "Ein Ferrari-Fahrer" },
+            { emoji: "🎨", name: "Leonardo da Vinci" },
+            { emoji: "⚽", name: "Ein Fussballer (Juve/Milan)" },
+            { emoji: "🍝", name: "Eine Nonna beim Nudeln machen" },
+            { emoji: "🐺", name: "Romulus oder Remus" },
+            { emoji: "👮", name: "Ein Carabinieri" }
+        ],
+
+        quizData: [
+            { q: "Wie heisst die Hauptstadt von Italien?", options: ["Venedig", "Rom", "Neapel"], correct: 1 },
+            { q: "Welche Form hat das Land Italien auf der Landkarte?", options: ["Stiefel", "Pizza", "Hut"], correct: 0 },
+            { q: "Was bedeutet 'Gelato' auf Deutsch?", options: ["Sonne", "Strand", "Eiscreme"], correct: 2 },
+            { q: "Welcher Vulkan hat einmal eine Stadt verschüttet?", options: ["Matterhorn", "Vesuv", "Ätna"], correct: 1 },
+            { q: "In welcher Stadt fahren Gondeln statt Autos?", options: ["Venedig", "Rom", "Mailand"], correct: 0 },
+            { q: "Wie heisst der schiefe Turm in Italien?", options: ["Turm von Pisa", "Eiffelturm", "Colosseum"], correct: 0 },
+            { q: "Wie nennt man die italienische Siesta am Nachmittag?", options: ["Pausa Pranzo", "Dolce Vita", "Giro"], correct: 0 },
+            { q: "Welche Farbe hat die Maut-Spur für unsere Box?", options: ["Weiss", "Gelb", "Blau"], correct: 1 },
+            { q: "Was baut man in Italien auf eine Pizza Margherita?", options: ["Ananas", "Mozzarella & Basilikum", "Salami"], correct: 1 },
+            { q: "Wo schlafen wir in Apulien?", options: ["Im Zelt", "Smeraldo Residence", "Im Auto"], correct: 1 },
+            { q: "Wer war Julius Cäsar?", options: ["Ein Pizzabäcker", "Römischer Herrscher", "Fussballer"], correct: 1 },
+            { q: "Wie heissen die weissen Häuser in Apulien?", options: ["Iglus", "Trulli", "Tipi"], correct: 1 },
+            { q: "Welches Meer ist bei Apulien flach und karibisch?", options: ["Ionisches Meer", "Nordsee", "Rotes Meer"], correct: 0 },
+            { q: "Wie sagt man 'Danke' auf Italienisch?", options: ["Prego", "Grazie", "Ciao"], correct: 1 },
+            { q: "Was darf man in Italien nach 11 Uhr nicht mehr bestellen?", options: ["Pizza", "Cappuccino", "Gelato"], correct: 1 },
+            { q: "Welches Auto ist typisch für Italien?", options: ["VW Käfer", "Fiat 500", "Porsche"], correct: 1 },
+            { q: "Woher kommt der Espresso?", options: ["Schweiz", "Italien", "Ecuador"], correct: 1 },
+            { q: "Wer baut die tollsten Sandburgen?", options: ["Diego", "Miguel & Valentina", "Luigi"], correct: 1 },
+            { q: "Was ist ein 'Nasoni' in Rom?", options: ["Grosse Nase", "Trinkbrunnen", "Eine Taube"], correct: 1 },
+            { q: "Welche Farben hat die Italienische Flagge?", options: ["Grün-Weiss-Rot", "Rot-Weiss-Blau", "Schwarz-Rot-Gold"], correct: 0 }
+        ],
+        quizCurrentQ: 0,
+        quizScore: 0,
+
+        botDictionary: { "eis": "gelato", "hallo": "ciao", "danke": "grazie", "bitte": "prego", "wasser": "acqua", "rechnung": "il conto", "strand": "spiaggia", "tschüss": "arrivederci", "ja": "sì", "nein": "no", "apotheke": "farmacia", "arzt": "medico" },
+        botJokes: ["Was sagt ein italienischer Bäcker, wenn sein Teig wegrennt? ... 'Komm Pizza zurück!' 😂", "Warum stehen in Rom so viele alte Steine? ... Weil sie zu schwer zum Wegräumen waren! 🏛️", "Was ist das Lieblingsessen von Vampiren in Italien? ... Blutorangen! 🧛🍊"],
+        
+        botLogic: [
+            { keywords: ["maut", "box", "piept", "fehler"], response: "<b>Maut1-Box piept nicht?</b> 1. Niemals rückwärts fahren! 2. Roter SOS-Knopf. 3. Sagt: <i>'Il mio Telepass non funziona'</i>. 4. Schranke öffnet sich. (Fahrt immer nur auf die GELBEN Spuren!)." },
+            { keywords: ["rom", "gratis", "kostenlos", "sehenswürdigkeiten", "engelsburg"], response: "<b>Rom Gratis-Hacks für Gabriela & Diego:</b> Spart euch teure Tickets! Der Petersdom ist früh morgens (07:00) gratis und leer. Das <b>Pantheon</b> ist extrem beeindruckend (Kids gratis). Der <b>Trevi-Brunnen</b> ist draussen und gratis. Und die <b>Engelsburg</b> (Castel Sant'Angelo) sieht von aussen fast besser aus als von innen!" },
+            { keywords: ["rom", "metro", "zentrum", "parken"], response: "<b>Rom Park-Hack:</b> Lasst den RAV4 auf dem Privatparkplatz der Aurelia Vatican Apartments (Via Dei Laterizi) stehen! Nehmt die Metro A (Valle Aurelia)." },
+            { keywords: ["strand", "apulien", "schön", "pescoluse", "malediven", "suina"], response: "<b>Strände im Salento:</b> Checkt den Wind! Ist der Wind gut (Tramontana), geht an die Ionische Küste nach 'Marina di Pescoluse' (Malediven des Salento) oder 'Punta della Suina' (toll mit Kiefernwald!). Sucht auf Google Maps immer nach 'Spiaggia Libera' (gratis) und kauft euch nen Schirm." },
+            { keywords: ["abend", "apulien", "kinder", "leuca", "gallipoli"], response: "<b>Abend-Action in Apulien:</b> Abends geht ihr an die Promenade von Torre San Giovanni (Luna Park für Valentina!) oder nach <b>Gallipoli Vecchia</b>. Ein toller Ausflug ist auch 'Santa Maria di Leuca', das absolute Ende Italiens." },
+            { keywords: ["orvieto", "parken", "rolltreppen", "höhlen", "underground"], response: "<b>Orvieto Hack:</b> Parkt den RAV4 unten im 'Foro Boario' (günstig). Von dort gehen moderne Rolltreppen komplett durch den Berg! Besucht unbedingt den 'Pozzo San Patrizio' oder die unterirdische Höhlenstadt (Orvieto Underground)." },
+            { keywords: ["tanken", "benzin", "hybrid", "rav4"], response: "<b>Hybrid Tank-Hack:</b> Tankt NIEMALS auf der Autobahn. Fahrt in Städten IMMER an Säulen mit <b>'Fai da te'</b> oder <b>'Self'</b>." },
+            { keywords: ["kaution", "geld"], response: "Ganz wichtig Diego: Die Smeraldo Residence in Apulien verlangt beim Check-In am 16.07. exakt <b>200 Euro in BAR</b> als Kaution." },
+            { keywords: ["wasser", "trinken", "nasoni"], response: "<b>Gratis Wasser (Nasoni):</b> In Rom müsst ihr kein Wasser kaufen! Nutzt die kleinen gusseisernen Brunnen (Nasoni). Loch unten zuhalten, dann spritzt das Wasser oben heraus!" },
+            { keywords: ["koffer", "packen", "tasche", "rav4"], response: "<b>Pack-Tipp:</b> Rollt eure Kleidung statt sie zu falten! Vergesst nicht die '1-Nacht-Tasche' für Orvieto, die zwingend GANZ OBEN im Kofferraum des RAV4 liegen muss." },
+            { keywords: ["lamon", "nonna", "mammut"], response: "<b>Fahrt nach Lamon:</b> Das ist eine 10-Stunden Mammut-Etappe. Startet zwingend um 04:00 Uhr morgens! So können Miguel und Valentina weiterschlafen und ihr entgeht der 40-Grad Hitze und dem Stau an der Adria (Ancona/Bologna)." },
+            { keywords: ["wind", "scirocco", "tramontana", "wetter"], response: "<b>Der Wind-Hack in Apulien:</b> Weht <i>Tramontana</i> (Nord), ist das Ionische Meer (Pescoluse) glatt. Weht <i>Scirocco</i> (Süd), ist das Adriatische Meer (Otranto) glatt. Nutzt den Wind-Kompass im Hacks-Tab!" },
+            { keywords: ["kaffee", "cappuccino", "espresso"], response: "<b>Kaffee-Regeln:</b> Cappuccino trinkt der Italiener nur bis 11 Uhr! Danach bestellt man einen Espresso (heisst einfach 'Caffè'). Zuerst an der Kasse zahlen (Scontrino holen), dann an den Tresen zum Bestellen. Am Tresen ('al banco') kostet er ca. 1,20€, am Tisch 3-5€!" },
+            { keywords: ["eis", "gelato", "geheimnis"], response: "<b>Das Gelato-Geheimnis:</b> Echtes Eis erkennt ihr daran, dass es KEINE bunten, aufgeblasenen Berge in der Vitrine bildet. Oft ist es unter Metalldeckeln (Pozzetti) versteckt. Pistazieneis muss blassgrün/bräunlich sein, niemals neongrün!" },
+            { keywords: ["trulli", "alberobello"], response: "<b>Die Schlumpfhäuser:</b> Alberobello ist berühmt für die weissen Trulli-Häuser. Ein toller Tagesausflug im Salento, besonders für Miguel und Valentina!" },
+            { keywords: ["supermarkt", "obst", "gemüse", "einkaufen", "handschuh"], response: "<b>Supermarkt Hack:</b> In Italien MUSS man zwingend die bereitgestellten Einweg-Plastikhandschuhe anziehen, wenn man Obst oder Gemüse aussucht und abwiegt. Sonst gibts Ärger!" },
+            { keywords: ["müll", "trennung", "raccolta", "plastik", "bio"], response: "<b>Das Müll-Chaos:</b> Italien ist bei der 'Raccolta Differenziata' extrem streng. Umido = Bio/Essen. Plastica/Metallo = Plastik&Dosen (zusammen!). Carta = Papier. Secco/Indifferenziato = Restmüll. Trennt das in der Residence exakt, sonst gibts Strafe!" },
+            { keywords: ["ztl", "strafe", "zone"], response: "<b>ZTL Zonen:</b> Zona a Traffico Limitato! Ein roter Kreis auf weissem Grund. Fahrt niemals da rein, ihr werdet gefilmt und es kostet sofort 80-120€ Strafe. Eure Unterkunft in Rom liegt zum Glück ausserhalb." },
+            { keywords: ["diego"], response: "Diego, als echter Italiener weisst du ja: Die Pasta wird al dente gegessen und Cappuccino nach 11 Uhr ist ein Verbrechen! Fahr den RAV4 sicher." },
+            { keywords: ["gabriela"], response: "Gabriela, du hast sicher alles super organisiert mit den Koffern. Wenn Diego sich über den Verkehr aufregt, erinner ihn daran, dass er im Urlaub ist! 😉" },
+            { keywords: ["miguel"], response: "Ciao Miguel! Bist du bereit, das meiste Eis von allen zu essen? Nutze den Gelato-Tracker!" },
+            { keywords: ["valentina"], response: "Ciao Valentina! Freust du dich schon auf den grossen Brunnen in Orvieto und die Naturpools am Strand? 🌊" },
+            { keywords: ["witz", "lachen", "erzähl"], response: "SPECIAL_JOKE" },
+            { keywords: ["übersetze", "wie sagt man", "auf italienisch"], response: "SPECIAL_TRANSLATE" }
+        ],
+
+        liveNotifications: [
+            "🚨 <b>Orvieto:</b> Parkplatz Foro Boario ansteuern! PIN B&B ist 1296.",
+            "⛽ <b>Tanken:</b> Autobahn vermeiden! Sucht eine Säule mit 'Fai da te'!",
+            "🏛️ <b>Rom:</b> RAV4 stehen lassen! Metro 'Valle Aurelia' nutzen. PIN ist 2875.",
+            "🏖️ <b>Apulien Check-in:</b> 200€ BAR-Kaution bereithalten! PIN Smeraldo: 3134.",
+            "⚠️ <b>Mammut-Etappe:</b> Startet heute Nacht um 04:00 Uhr nach Lamon!",
+            "💧 <b>Rom Tipp:</b> Trinkt Wasser aus den Nasoni-Brunnen!",
+            "♻️ <b>Müll-Reminder:</b> Umido ist Bio, Secco ist Restmüll. Richtig trennen!"
+        ],
+        notifIndex: 0,
+        mapInitialized: false,
+        isTracking: false,
+        gpsWatcherId: null,
+        currentMarker: null,
+        modalTarget: null,
+
+        // --- CORE INIT ---
+        init: function() {
+            this.renderChecklist();
+            this.renderExpenses();
+            this.renderTricolore();
+            this.renderGelato();
+            this.renderDiaryFeed();
+            this.checkParkingState();
+        },
+
+        // --- HELPER ---
+        handleImgError: function(img, keyword) {
+            img.onerror = null;
+            img.src = `https://placehold.co/600x400/2563eb/ffffff?text=${encodeURIComponent(keyword)}`;
+        },
+
+        showToast: function(msg) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = 'toast flex items-start gap-3 bg-white border border-slate-100 z-50 relative';
+            toast.innerHTML = `<div class="mt-0.5 text-blue-500 text-lg"><i class="fa-solid fa-circle-info"></i></div><div class="text-xs text-slate-700 font-medium leading-relaxed">${msg}</div>`;
+            container.appendChild(toast);
+            setTimeout(() => { if(container.contains(toast)) container.removeChild(toast); }, 4500);
+        },
+
+        // --- MODAL & UI ---
+        openModal: function(target) {
+            this.modalTarget = target;
+            const modal = document.getElementById('custom-modal');
+            const title = document.getElementById('modal-title');
+            const desc = document.getElementById('modal-desc');
+            const btn = document.getElementById('modal-confirm-btn');
+
+            if (target === 'expenses') {
+                title.innerText = 'Gesamte Kasse leeren?';
+                desc.innerText = 'Möchtest du wirklich alle Ausgaben unwiderruflich löschen?';
+                btn.onclick = () => { this.clearExpenses(); this.closeModal(); };
+            } else if (target === 'checklist') {
+                title.innerText = 'Checkliste zurücksetzen?';
+                desc.innerText = 'Möchtest du alle Haken entfernen und von vorne beginnen?';
+                btn.onclick = () => { this.resetChecklist(); this.closeModal(); };
+            } else if (target === 'tricolore') {
+                title.innerText = 'Zähler zurücksetzen?';
+                desc.innerText = 'Möchtest du das Tricolore-Spiel wirklich von vorne beginnen?';
+                btn.onclick = () => { this.resetTricolore(); this.closeModal(); };
+            }
+
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0', 'pointer-events-none');
+                modal.querySelector('.modal-content').classList.remove('scale-95');
+                modal.querySelector('.modal-content').classList.add('scale-100');
+            }, 10);
+        },
+
+        closeModal: function() {
+            const modal = document.getElementById('custom-modal');
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            modal.querySelector('.modal-content').classList.remove('scale-100');
+            modal.querySelector('.modal-content').classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                this.modalTarget = null;
+            }, 200);
+        },
+
+        confirmResetChecklist: function() {
+            this.openModal('checklist');
+        },
+
+        switchTab: function(tabId, btnElement) {
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+                tab.style.display = 'none';
+            });
+            const targetTab = document.getElementById(tabId);
+            targetTab.style.display = 'block';
+            
+            // Trigger reflow
+            void targetTab.offsetWidth;
+            targetTab.classList.add('active');
+            
+            document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
+            btnElement.classList.add('active');
+            
+            document.getElementById('main-scroll').scrollTo(0,0);
+
+            if(tabId === 'tab-diary') {
+                setTimeout(() => { 
+                    this.initMap(); 
+                    if(this.map) this.map.invalidateSize(); 
+                }, 100);
+            }
+        },
+
+        switchGame: function(gameId, btnElement) {
+            document.querySelectorAll('.game-view').forEach(v => { v.classList.remove('block'); v.classList.add('hidden'); });
+            document.getElementById(gameId).classList.remove('hidden');
+            document.getElementById(gameId).classList.add('block');
+            
+            document.querySelectorAll('.game-btn').forEach(btn => { 
+                btn.classList.remove('active-game'); 
+                btn.classList.add('text-slate-500'); 
+            });
+            btnElement.classList.add('active-game');
+            btnElement.classList.remove('text-slate-500');
+        },
+
+        triggerLiveNotification: function() {
+            const msg = this.liveNotifications[this.notifIndex];
+            this.notifIndex = (this.notifIndex + 1) % this.liveNotifications.length;
+            this.showToast(msg);
+        },
+
+        speak: function(text) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'it-IT';
+                utterance.rate = 0.85;
+                window.speechSynthesis.speak(utterance);
+            } else {
+                this.showToast("Sprachausgabe wird vom Browser nicht unterstützt.");
+            }
+        },
+
+        // --- CHECKLIST & BUDGET ---
+        toggleChecklistMode: function(mode) {
+            if(mode === 'pack') {
+                document.getElementById('mode-pack').classList.remove('hidden');
+                document.getElementById('mode-budget').classList.add('hidden');
+                document.getElementById('mode-pack-btn').classList.add('bg-white', 'shadow', 'text-blue-600');
+                document.getElementById('mode-pack-btn').classList.remove('text-slate-500');
+                document.getElementById('mode-budget-btn').classList.remove('bg-white', 'shadow', 'text-blue-600');
+                document.getElementById('mode-budget-btn').classList.add('text-slate-500');
+            } else {
+                document.getElementById('mode-pack').classList.add('hidden');
+                document.getElementById('mode-budget').classList.remove('hidden');
+                document.getElementById('mode-budget-btn').classList.add('bg-white', 'shadow', 'text-blue-600');
+                document.getElementById('mode-budget-btn').classList.remove('text-slate-500');
+                document.getElementById('mode-pack-btn').classList.remove('bg-white', 'shadow', 'text-blue-600');
+                document.getElementById('mode-pack-btn').classList.add('text-slate-500');
+            }
+        },
+
+        renderChecklist: function() {
+            const container = document.getElementById('checklist-container');
+            container.innerHTML = '';
+            let total = 0, checked = 0;
+
+            for (const [category, items] of Object.entries(this.checklistData)) {
+                const catDiv = document.createElement('details');
+                catDiv.className = 'group bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden mb-3';
+                if(category.includes('Abfahrtstag') || category.includes('1-Nacht') || category.includes('Technik')) catDiv.setAttribute('open', '');
+                
+                catDiv.innerHTML = `
+                    <summary class="font-extrabold text-slate-900 text-sm p-4 cursor-pointer flex items-center justify-between select-none active:bg-slate-50 transition">
+                        <span>${category}</span>
+                        <i class="fa-solid fa-chevron-down text-slate-400 text-xs transition-transform duration-300"></i>
+                    </summary>
+                `;
+                
+                const listWrapper = document.createElement('div');
+                listWrapper.className = 'px-4 pb-4 border-t border-slate-50';
+                const list = document.createElement('div');
+                list.className = 'space-y-3 pt-3';
+
+                items.forEach(item => {
+                    total++;
+                    const isChecked = this.checklistState[item.id] || false;
+                    if (isChecked) checked++;
+
+                    const label = document.createElement('label');
+                    label.className = `check-container flex items-start gap-3 cursor-pointer group ${isChecked ? 'completed' : ''}`;
+                    label.innerHTML = `
+                        <div class="relative flex items-center justify-center mt-0.5 shrink-0">
+                            <input type="checkbox" class="sr-only" onchange="app.toggleCheck('${item.id}', this)" ${isChecked ? 'checked' : ''}>
+                            <div class="w-6 h-6 border-2 border-slate-300 rounded-md bg-white flex items-center justify-center transition-colors group-hover:border-blue-400">
+                                <svg class="w-4 h-4 text-white hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg>
+                            </div>
+                        </div>
+                        <span class="text-[13px] font-medium text-slate-700 leading-snug select-none mt-0.5">${item.text}</span>
+                    `;
+                    list.appendChild(label);
+                });
+                
+                listWrapper.appendChild(list);
+                catDiv.appendChild(listWrapper);
+                container.appendChild(catDiv);
+            }
+
+            const percent = total === 0 ? 0 : Math.round((checked / total) * 100);
+            document.getElementById('progress-bar').style.width = percent + '%';
+            document.getElementById('progress-text').innerText = `${checked}/${total} erledigt`;
+        },
+
+        toggleCheck: function(id, checkbox) {
+            this.checklistState[id] = checkbox.checked;
+            localStorage.setItem('bItal_v10_chk', JSON.stringify(this.checklistState));
+            this.renderChecklist();
+        },
+
+        resetChecklist: function() {
+            this.checklistState = {};
+            localStorage.removeItem('bItal_v10_chk');
+            this.renderChecklist();
+            this.showToast("Checkliste komplett zurückgesetzt!");
+        },
+
+        addExpense: function() {
+            const desc = document.getElementById('expense-desc').value.trim();
+            const amount = parseFloat(document.getElementById('expense-amount').value);
+            const cat = document.getElementById('expense-category').value;
+
+            if (desc !== '' && !isNaN(amount) && amount > 0) {
+                this.expenses.push({ id: Date.now(), desc: desc, amount: amount, cat: cat });
+                localStorage.setItem('bItal_v10_exp', JSON.stringify(this.expenses));
+                document.getElementById('expense-desc').value = '';
+                document.getElementById('expense-amount').value = '';
+                this.renderExpenses();
+            }
+        },
+
+        clearExpenses: function() {
+            this.expenses = [];
+            localStorage.removeItem('bItal_v10_exp');
+            this.renderExpenses();
+            this.showToast("Kasse komplett geleert.");
+        },
+
+        deleteExpense: function(id) {
+            this.expenses = this.expenses.filter(e => e.id !== id);
+            localStorage.setItem('bItal_v10_exp', JSON.stringify(this.expenses));
+            this.renderExpenses();
+        },
+
+        renderExpenses: function() {
+            const list = document.getElementById('expense-list');
+            list.innerHTML = '';
+            let total = 0;
+            
+            for (let i = this.expenses.length - 1; i >= 0; i--) {
+                const exp = this.expenses[i];
+                total += exp.amount;
+                list.innerHTML += `
+                    <div class="flex justify-between items-center bg-white p-4 rounded-2xl border border-slate-100 shadow-sm mb-3">
+                        <div class="flex items-center gap-3">
+                            <span class="text-xl bg-slate-50 w-10 h-10 flex items-center justify-center rounded-xl">${exp.cat || '💶'}</span>
+                            <span class="text-sm font-extrabold text-slate-800">${exp.desc}</span>
+                        </div>
+                        <div class="flex items-center gap-4">
+                            <span class="font-mono font-bold text-slate-900 text-base">€ ${exp.amount.toFixed(2)}</span>
+                            <button onclick="app.deleteExpense(${exp.id})" class="text-slate-300 hover:text-red-500 active:scale-90 transition w-8 h-8 flex items-center justify-center"><i class="fa-solid fa-trash text-sm"></i></button>
+                        </div>
+                    </div>
+                `;
+            }
+            document.getElementById('expense-total').innerText = `€ ${total.toFixed(2)}`;
+            if(this.expenses.length === 0) list.innerHTML = '<p class="text-sm text-slate-400 text-center py-6 font-medium">Noch keine Ausgaben erfasst.</p>';
+        },
+
+        // --- MAP & GPS (Tagebuch) ---
+        saveParking: function() {
+            if (navigator.geolocation) {
+                this.showToast("Speichere GPS-Standort des RAV4...");
+                navigator.geolocation.getCurrentPosition((pos) => {
+                    const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+                    const time = new Date().toLocaleTimeString('de-CH', {hour: '2-digit', minute:'2-digit'});
+                    localStorage.setItem('bItal_v10_park', JSON.stringify({coords, time}));
+                    this.checkParkingState();
+                    this.showToast(`RAV4 Parkplatz gespeichert um ${time} Uhr! 📍`);
+                }, () => {
+                    this.showToast("GPS Fehler. Bitte Standort-Zugriff im Browser erlauben.");
+                }, {enableHighAccuracy: true});
+            } else {
+                this.showToast("Dein Browser unterstützt kein GPS.");
+            }
+        },
+
+        checkParkingState: function() {
+            const saved = JSON.parse(localStorage.getItem('bItal_v10_park'));
+            if(saved) {
+                document.getElementById('btn-find-car').classList.remove('hidden');
+            }
+        },
+
+        openParkingMap: function() {
+            const saved = JSON.parse(localStorage.getItem('bItal_v10_park'));
+            if(saved && saved.coords) {
+                const url = `https://www.google.com/maps/dir/?api=1&destination=${saved.coords.lat},${saved.coords.lng}&travelmode=walking`;
+                window.open(url, '_blank');
+            }
+        },
+
+        initMap: function() {
+            if(this.mapInitialized || typeof L === 'undefined') return;
+            this.mapInitialized = true;
+            try {
+                this.map = L.map('trip-map', {zoomControl: false}).setView([41.9028, 12.4964], 5);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OS' }).addTo(this.map);
+                const route = [[47.4667, 7.8167], [42.7174, 12.1116], [41.9028, 12.4964], [39.8885, 18.1130], [46.0463, 11.7460]];
+                L.polyline(route, {color: '#2563eb', weight: 4, opacity: 0.8}).addTo(this.map);
+                
+                const customIcon = L.divIcon({ className: 'custom-div-icon', html: "<div style='background-color:#2563eb; width:12px; height:12px; border-radius:50%; border:2px solid white; box-shadow: 0 0 6px rgba(0,0,0,0.5);'></div>", iconSize: [16, 16], iconAnchor: [8, 8] });
+                
+                L.marker(route[0], {icon: customIcon}).addTo(this.map).bindPopup("Start: Sissach");
+                L.marker(route[1], {icon: customIcon}).addTo(this.map).bindPopup("Orvieto");
+                L.marker(route[2], {icon: customIcon}).addTo(this.map).bindPopup("Rom");
+                L.marker(route[3], {icon: customIcon}).addTo(this.map).bindPopup("Salento");
+                L.marker(route[4], {icon: customIcon}).addTo(this.map).bindPopup("Lamon");
+                
+                this.map.fitBounds(L.polyline(route).getBounds(), {padding: [20,20]});
+            } catch(e) { console.log("Map err", e); }
+        },
+
+        toggleGPS: function() {
+            const btn = document.getElementById('gps-btn');
+            if (this.isTracking) {
+                if (this.gpsWatcherId && navigator.geolocation) {
+                    navigator.geolocation.clearWatch(this.gpsWatcherId);
+                }
+                if (this.currentMarker && this.map) {
+                    this.map.removeLayer(this.currentMarker);
+                    this.currentMarker = null;
+                }
+                this.isTracking = false;
+                btn.innerHTML = `<i class="fa-solid fa-location-crosshairs text-blue-500 text-sm"></i> <span>Tracking Aus</span>`;
+                btn.classList.remove('bg-blue-50', 'text-blue-700', 'border-blue-200');
+                btn.classList.add('bg-white', 'text-slate-600', 'border-slate-200');
+                this.showToast("Live-Tracking beendet.");
+            } else {
+                if (navigator.geolocation) {
+                    this.showToast("Suche GPS Signal...");
+                    btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-blue-500 text-sm"></i> <span>Suche...</span>`;
+                    
+                    this.gpsWatcherId = navigator.geolocation.watchPosition((pos) => {
+                        this.isTracking = true;
+                        btn.innerHTML = `<i class="fa-solid fa-location-crosshairs text-blue-600 text-sm"></i> <span class="text-blue-700">Tracking Aktiv</span>`;
+                        btn.classList.remove('bg-white', 'text-slate-600', 'border-slate-200');
+                        btn.classList.add('bg-blue-50', 'text-blue-700', 'border-blue-200');
+
+                        const lat = pos.coords.latitude;
+                        const lng = pos.coords.longitude;
+
+                        if (!this.currentMarker && this.map) {
+                            const pulseIcon = L.divIcon({ className: 'gps-pulse-container', html: '<div class="gps-pulse"></div>', iconSize: [14, 14], iconAnchor: [7, 7] });
+                            this.currentMarker = L.marker([lat, lng], {icon: pulseIcon}).addTo(this.map);
+                        } else if (this.currentMarker) {
+                            this.currentMarker.setLatLng([lat, lng]);
+                        }
+                        
+                        if(this.map && !this.map.hasCenteredOnGPS) {
+                            this.map.setView([lat, lng], 8);
+                            this.map.hasCenteredOnGPS = true;
+                        }
+                    }, (err) => {
+                        this.showToast("GPS Fehler. Zugriff erlaubt?");
+                        this.isTracking = false;
+                        btn.innerHTML = `<i class="fa-solid fa-location-crosshairs text-blue-500 text-sm"></i> <span>Tracking Aus</span>`;
+                    }, { enableHighAccuracy: true, maximumAge: 10000 });
+                } else {
+                    this.showToast("GPS wird nicht unterstützt.");
+                }
+            }
+        },
+
+        addDiaryEntry: function() {
+            const text = document.getElementById('diary-text').value.trim();
+            const img = document.getElementById('diary-img').value.trim();
+            const mood = document.getElementById('diary-mood').value;
+            if (text || img) {
+                const entry = { id: Date.now(), text, img, mood, date: new Date().toLocaleString('de-CH', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'}) };
+                this.diaryEntries.unshift(entry);
+                localStorage.setItem('bItal_v10_diary', JSON.stringify(this.diaryEntries));
+                document.getElementById('diary-text').value = '';
+                document.getElementById('diary-img').value = '';
+                this.renderDiaryFeed();
+                this.showToast("Tagebuch aktualisiert!");
+            }
+        },
+
+        deleteDiaryEntry: function(id) {
+            this.diaryEntries = this.diaryEntries.filter(e => e.id !== id);
+            localStorage.setItem('bItal_v10_diary', JSON.stringify(this.diaryEntries));
+            this.renderDiaryFeed();
+        },
+
+        renderDiaryFeed: function() {
+            const feed = document.getElementById('diary-feed');
+            feed.innerHTML = '';
+            if(this.diaryEntries.length === 0) { feed.innerHTML = '<p class="text-sm text-slate-400 text-center py-8 font-medium">Noch keine Einträge. Startet euer Tagebuch!</p>'; return; }
+            this.diaryEntries.forEach(e => {
+                let imgHtml = e.img ? `<img src="${e.img}" onerror="this.style.display='none'" class="w-full h-48 object-cover rounded-xl mb-4 bg-slate-100 border border-slate-200">` : '';
+                let moodHtml = e.mood ? `<span class="bg-slate-100 px-3 py-1 rounded-full text-[11px] ml-2 border border-slate-200">${e.mood}</span>` : '';
+                feed.innerHTML += `<div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 mb-4">
+                    <div class="flex justify-between items-center mb-4">
+                        <span class="text-[11px] font-extrabold text-slate-400 uppercase tracking-wide"><i class="fa-regular fa-clock mr-1"></i> ${e.date} ${moodHtml}</span>
+                        <button onclick="app.deleteDiaryEntry(${e.id})" class="text-slate-300 hover:text-red-500 transition w-8 h-8 flex items-center justify-center"><i class="fa-solid fa-trash text-xs"></i></button>
+                    </div>
+                    ${imgHtml}
+                    <p class="text-sm text-slate-800 leading-relaxed font-medium">${e.text}</p>
+                </div>`;
+            });
+        },
+
+        showWindHack: function(windType) {
+            const resultDiv = document.getElementById('wind-result');
+            resultDiv.classList.remove('hidden');
+            resultDiv.classList.add('block');
+            
+            if (windType === 'scirocco') {
+                resultDiv.innerHTML = `<span class="font-extrabold text-red-600 block mb-1.5 text-sm">Bei Südwind (Scirocco):</span> Das Ionische Meer (Pescoluse, Gallipoli) hat heute hohe Wellen und oft Quallen! 🌊 <br><br><b>Tipp:</b> Fahrt an die Adriaküste (z.B. Otranto, Baia dei Turchi oder Alimini). Dort weht der Wind ablandig und das Wasser ist spiegelglatt!`;
+                resultDiv.className = "mt-4 p-5 bg-red-50 rounded-2xl border border-red-100 text-xs text-red-900 font-medium shadow-sm transition";
+            } else {
+                resultDiv.innerHTML = `<span class="font-extrabold text-blue-600 block mb-1.5 text-sm">Bei Nordwind (Tramontana):</span> Die Adria hat heute hohe Wellen! 🌊 <br><br><b>Tipp:</b> Bleibt an eurer Seite (Ionische Küste)! Fahrt nach Pescoluse (Malediven), Torre San Giovanni oder Punta della Suina. Das Wasser ist heute karibisch, extrem flach und spiegelglatt!`;
+                resultDiv.className = "mt-4 p-5 bg-blue-50 rounded-2xl border border-blue-100 text-xs text-blue-900 font-medium shadow-sm transition";
+            }
+        },
+
+        // --- GAMES ---
+        renderTricolore: function() {
+            document.getElementById('count-green').innerText = this.tricoloreState.green;
+            document.getElementById('count-white').innerText = this.tricoloreState.white;
+            document.getElementById('count-red').innerText = this.tricoloreState.red;
+            if (this.tricoloreState.green >= 10 && this.tricoloreState.white >= 10 && this.tricoloreState.red >= 10) {
+                setTimeout(() => { this.showToast("🎉 Miguel & Valentina haben alle Tricolore-Autos gefunden! Zeit für ein Gelato!"); this.resetTricolore(); }, 500);
+            }
+        },
+        updateTricolore: function(color) {
+            if (this.tricoloreState[color] < 10) {
+                this.tricoloreState[color]++;
+                localStorage.setItem('bItal_v10_tri', JSON.stringify(this.tricoloreState));
+                this.renderTricolore();
+            }
+        },
+        resetTricolore: function() {
+            this.tricoloreState = { green: 0, white: 0, red: 0 };
+            localStorage.removeItem('bItal_v10_tri');
+            this.renderTricolore();
+        },
+
+        toggleBingo: function(el) { el.classList.toggle('bg-green-100'); el.classList.toggle('border-green-400'); el.classList.toggle('border-slate-200'); el.classList.toggle('translate-y-1'); el.classList.toggle('border-b-0'); el.classList.toggle('hover:bg-slate-50');},
+        resetBingo: function() { document.querySelectorAll('.bingo-item').forEach(el => { el.classList.remove('bg-green-100', 'border-green-400', 'translate-y-1', 'border-b-0'); el.classList.add('border-slate-200', 'hover:bg-slate-50');}); },
+
+        togglePlate: function(checkbox) {
+            const wrapper = checkbox.closest('label');
+            if(checkbox.checked) {
+                wrapper.classList.add('bg-green-50', 'border-green-400');
+                wrapper.classList.remove('bg-slate-50', 'border-slate-200', 'hover:bg-slate-100');
+                wrapper.querySelector('svg').classList.remove('hidden');
+                wrapper.querySelector('div').classList.add('bg-green-500', 'border-green-500');
+            } else {
+                wrapper.classList.remove('bg-green-50', 'border-green-400');
+                wrapper.classList.add('bg-slate-50', 'border-slate-200', 'hover:bg-slate-100');
+                wrapper.querySelector('svg').classList.add('hidden');
+                wrapper.querySelector('div').classList.remove('bg-green-500', 'border-green-500');
+            }
+        },
+
+        renderGelato: function() {
+            const container = document.getElementById('gelato-list');
+            container.innerHTML = '';
+            this.gelatoFamily.forEach(member => {
+                const count = this.gelatoCounts[member.id];
+                container.innerHTML += `
+                    <div class="flex items-center justify-between bg-white p-3.5 rounded-2xl border-b-[4px] border-slate-200 shadow-sm">
+                        <div class="flex items-center gap-3">
+                            <span class="text-3xl drop-shadow-sm">${member.icon}</span>
+                            <span class="text-sm font-extrabold text-slate-700 font-playful">${member.name}</span>
+                        </div>
+                        <div class="flex items-center gap-4">
+                            <button onclick="app.updateGelato('${member.id}', -1)" class="w-10 h-10 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-extrabold text-xl active:scale-90 transition shadow-inner">-</button>
+                            <span class="font-mono font-extrabold text-pink-600 text-xl w-6 text-center">${count}</span>
+                            <button onclick="app.updateGelato('${member.id}', 1)" class="w-10 h-10 rounded-full bg-pink-100 hover:bg-pink-200 text-pink-700 font-extrabold text-xl active:scale-90 transition shadow-sm">+</button>
+                        </div>
+                    </div>`;
+            });
+        },
+        updateGelato: function(id, change) {
+            let count = this.gelatoCounts[id] + change;
+            if(count < 0) count = 0;
+            this.gelatoCounts[id] = count;
+            localStorage.setItem('bItal_v10_ice', JSON.stringify(this.gelatoCounts));
+            this.renderGelato();
+        },
+
+        spinRoulette: function() {
+            const emojis = ['🍦', '🍧', '🍨', '😋', '🥳', '😎'];
+            const flavors = ['Stracciatella!', 'Pistacchio!', 'Puffo (Schlumpf)!', 'Fior di Latte!', 'Limone!', 'Cioccolato!', 'Fragola!', 'Nocciola!', 'Bacio!'];
+            const people = ['Diego', 'Gabriela', 'Miguel', 'Valentina'];
+            
+            const resEl = document.getElementById('roulette-result');
+            const textEl = document.getElementById('roulette-text');
+            
+            textEl.classList.add('hidden');
+            let spins = 0;
+            let interval = setInterval(() => {
+                resEl.innerText = emojis[Math.floor(Math.random() * emojis.length)];
+                spins++;
+                if (spins > 15) {
+                    clearInterval(interval);
+                    resEl.innerText = '🎉';
+                    document.getElementById('roulette-flavor').innerText = flavors[Math.floor(Math.random() * flavors.length)];
+                    document.getElementById('roulette-person').innerText = people[Math.floor(Math.random() * people.length)];
+                    textEl.classList.remove('hidden');
+                }
+            }, 100);
+        },
+
+        nextWhoAmI: function() {
+            const card = document.querySelector('.flip-card');
+            if(card.classList.contains('is-flipped')) {
+                card.classList.remove('is-flipped');
+                setTimeout(() => { this.setNewWhoAmI(); }, 300);
+            } else {
+                this.setNewWhoAmI();
+            }
+        },
+        setNewWhoAmI: function() {
+            const item = this.whoAmIData[Math.floor(Math.random() * this.whoAmIData.length)];
+            document.getElementById('whoami-emoji').innerText = item.emoji;
+            document.getElementById('whoami-text').innerText = item.name;
+        },
+
+        startQuiz: function() {
+            this.quizCurrentQ = 0; this.quizScore = 0;
+            document.getElementById('quiz-question-container').innerHTML = `
+                <p id="quiz-question" class="font-bold text-sm text-white mb-6 relative z-10 font-playful leading-relaxed"></p>
+                <div id="quiz-answers" class="grid grid-cols-1 gap-3 relative z-10"></div>
+            `;
+            this.quizData = this.quizData.sort(() => Math.random() - 0.5);
+            this.showQuizQuestion();
+        },
+        showQuizQuestion: function() {
+            if(this.quizCurrentQ >= 10 || this.quizCurrentQ >= this.quizData.length) {
+                document.getElementById('quiz-question').innerText = `🎉 Quiz beendet! Ihr habt ${this.quizScore} von 10 Punkten!`;
+                document.getElementById('quiz-answers').innerHTML = `<button onclick="app.startQuiz()" class="bg-white text-indigo-700 font-extrabold py-4 rounded-2xl text-sm shadow-md active:scale-95 transition border-b-4 border-indigo-200 font-playful">Nochmal spielen</button>`;
+                return;
+            }
+            const qData = this.quizData[this.quizCurrentQ];
+            document.getElementById('quiz-question').innerText = qData.q;
+            let answersHtml = '';
+            qData.options.forEach((opt, index) => {
+                answersHtml += `<button onclick="app.answerQuiz(${index})" class="bg-white text-indigo-800 font-bold py-4 rounded-2xl text-sm w-full active:bg-indigo-50 hover:bg-slate-50 shadow-sm transition border-b-[4px] border-indigo-200 font-playful">${opt}</button>`;
+            });
+            document.getElementById('quiz-answers').innerHTML = answersHtml;
+            document.getElementById('quiz-score').innerText = `Punkte: ${this.quizScore}`;
+        },
+        answerQuiz: function(selectedIndex) {
+            const correctIndex = this.quizData[this.quizCurrentQ].correct;
+            const buttons = document.getElementById('quiz-answers').children;
+            if(selectedIndex === correctIndex) {
+                buttons[selectedIndex].className = 'bg-green-500 text-white border-b-4 border-green-700 font-extrabold py-4 rounded-2xl text-sm w-full shadow-md font-playful';
+                this.quizScore++;
+            } else {
+                buttons[selectedIndex].className = 'bg-red-500 text-white border-b-4 border-red-700 font-extrabold py-4 rounded-2xl text-sm w-full shadow-md shake-err font-playful';
+                buttons[correctIndex].className = 'bg-green-500 text-white border-b-4 border-green-700 font-extrabold py-4 rounded-2xl text-sm w-full shadow-md font-playful';
+            }
+            this.quizCurrentQ++;
+            setTimeout(() => this.showQuizQuestion(), 1500);
+        },
+
+        // --- BOT LOGIC ---
+        setChatInput: function(text) {
+            document.getElementById('chat-input').value = text;
+            this.handleChatSubmit();
+        },
+
+        handleChatSubmit: function() {
+            const inputField = document.getElementById('chat-input');
+            const text = inputField.value.trim();
+            if (text === '') return;
+            this.sendBotMessage(text);
+            inputField.value = '';
+        },
+
+        sendBotMessage: function(text) {
+            const container = document.getElementById('chat-container');
+            const mainScroll = document.getElementById('main-scroll');
+            
+            const userMsg = document.createElement('div');
+            userMsg.className = "flex items-end gap-3 justify-end";
+            userMsg.innerHTML = `<div class="chat-bubble-user p-3.5 shadow-sm text-sm font-medium max-w-[85%]">${text}</div>`;
+            container.appendChild(userMsg);
+            mainScroll.scrollTop = mainScroll.scrollHeight;
+
+            const typingId = 'typing-' + Date.now();
+            const typing = document.createElement('div');
+            typing.id = typingId;
+            typing.className = "flex items-end gap-3 mt-3";
+            typing.innerHTML = `
+                <div class="w-9 h-9 rounded-full bg-gradient-to-tr from-blue-100 to-blue-200 flex items-center justify-center shrink-0 border border-blue-300 shadow-sm text-sm">🤖</div>
+                <div class="chat-bubble-bot p-3.5 text-xs text-slate-500 font-medium flex items-center gap-1.5 h-[42px]">
+                    <div class="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" style="animation-delay: 0s"></div>
+                    <div class="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+                    <div class="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" style="animation-delay: 0.4s"></div>
+                </div>
+            `;
+            container.appendChild(typing);
+            mainScroll.scrollTop = mainScroll.scrollHeight;
+
+            let botReply = "Scusa famiglia! Dazu habe ich keine Infos! Frag mich nach 'Kaffee', 'Apulien Strände', 'Trulli', 'Müll', 'Eis', 'Lamon', 'Supermarkt' oder sag 'Erzähl einen Witz'.";
+            const lowerText = text.toLowerCase();
+            
+            if (lowerText.includes("übersetze") || lowerText.includes("wie sagt man") || lowerText.includes("auf italienisch")) {
+                let found = false;
+                for (let key in this.botDictionary) {
+                    if (lowerText.includes(key)) {
+                        const it = this.botDictionary[key].toUpperCase();
+                        botReply = `Auf Italienisch heisst das: <b>${it}</b> 🇮🇹`;
+                        setTimeout(() => this.speak(this.botDictionary[key]), 1000);
+                        found = true; break;
+                    }
+                }
+                if(!found) botReply = "Dieses Wort fehlt noch in meinem Italienisch-Wörterbuch. 😅";
+            } else {
+                for (let logic of this.botLogic) {
+                    if (logic.keywords.some(kw => lowerText.includes(kw))) {
+                        botReply = logic.response; break;
+                    }
+                }
+            }
+
+            if(botReply === "SPECIAL_JOKE") botReply = this.botJokes[Math.floor(Math.random() * this.botJokes.length)];
+
+            setTimeout(() => {
+                const typingEl = document.getElementById(typingId);
+                if (typingEl) typingEl.remove();
+                
+                const speechBtn = ('speechSynthesis' in window && botReply !== "SPECIAL_JOKE" && !botReply.includes("SPECIAL_TRANSLATE")) ? 
+                    `<button onclick="app.speak('${botReply.replace(/<[^>]*>?/gm, '').replace(/'/g, "\\'")}')" class="text-blue-500 hover:text-blue-700 ml-2 bg-blue-50 w-7 h-7 rounded-full inline-flex items-center justify-center border border-blue-100 active:scale-90 transition"><i class="fa-solid fa-volume-high text-[11px]"></i></button>` : '';
+
+                const botMsg = document.createElement('div');
+                botMsg.className = "flex items-end gap-3 mt-3";
+                botMsg.innerHTML = `
+                    <div class="w-9 h-9 rounded-full bg-gradient-to-tr from-blue-100 to-blue-200 flex items-center justify-center shrink-0 border border-blue-300 shadow-sm text-sm">🤖</div>
+                    <div class="chat-bubble-bot p-4 shadow-sm text-[13px] font-medium text-slate-700 max-w-[85%] leading-relaxed">
+                        ${botReply} ${speechBtn}
+                    </div>
+                `;
+                container.appendChild(botMsg);
+                mainScroll.scrollTop = mainScroll.scrollHeight;
+            }, 800 + Math.random() * 600); 
+        }
+    };
+
+    // Start App
+    document.addEventListener("DOMContentLoaded", () => {
+        app.init();
+        app.setNewWhoAmI();
+    });
+</script>
+</body>
+</html>
