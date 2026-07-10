@@ -1,0 +1,1802 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Bella Italia 2026 - Ultimate Masterpiece</title>
+    <meta name="theme-color" content="#020617">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=Share+Tech+Mono&display=swap');
+        
+        :root {
+            --bg-dark: #020617;
+            --surface: #0f172a;
+            --primary: #3b82f6;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif; 
+            background-color: var(--bg-dark); 
+            -webkit-tap-highlight-color: transparent; 
+            overscroll-behavior-y: none;
+            margin: 0; height: 100dvh; display: flex; justify-content: center;
+        }
+
+        #app-wrapper {
+            width: 100%; max-width: 480px; 
+            background: linear-gradient(180deg, #0B1121 0%, #0f172a 100%);
+            height: 100dvh; display: flex; flex-direction: column; position: relative;
+            box-shadow: 0 0 50px rgba(0,0,0,0.5); overflow: hidden; color: #f1f5f9;
+        }
+
+        h1, h2, h3, h4, .font-heading { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .font-mono-tech { font-family: 'Share Tech Mono', monospace; }
+
+        .glass-nav { background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(24px); border-top: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: env(safe-area-inset-bottom); z-index: 50; }
+        .glass-card { background: rgba(30, 41, 59, 0.6); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2); }
+        
+        .timeline-line { position: absolute; left: 24px; top: 20px; bottom: 20px; width: 2px; background: linear-gradient(to bottom, #3b82f6, #ef4444, #eab308, #22c55e); opacity: 0.5; box-shadow: 0 0 10px rgba(59,130,246,0.5); }
+        .timeline-card { position: relative; z-index: 1; }
+        
+        .check-container input:checked + div { background-color: var(--primary); border-color: var(--primary); box-shadow: 0 0 10px rgba(59,130,246,0.4); }
+        .check-container input:checked + div svg { display: block; }
+        .check-container.completed span { text-decoration: line-through; color: #475569; opacity: 0.7; }
+
+        .chat-bubble-bot { background: rgba(30, 41, 59, 0.8); border-radius: 20px 20px 20px 4px; border: 1px solid rgba(255,255,255,0.05); color: #e2e8f0; }
+        .chat-bubble-user { background: linear-gradient(135deg, #2563eb, #3b82f6); color: white; border-radius: 20px 20px 4px 20px; box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3); }
+        
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+        .game-btn.active-game { background: linear-gradient(to bottom right, #3b82f6, #1d4ed8); color: white; box-shadow: 0 4px 15px rgba(37, 99, 235, 0.4); border-color: rgba(255,255,255,0.2); transform: translateY(-2px); }
+        .text-glow { text-shadow: 0 0 10px rgba(255,255,255,0.3); }
+        
+        .telemetry-ring { width: 80px; height: 80px; border-radius: 50%; background: conic-gradient(#3b82f6 var(--val), #1e293b 0); display: flex; align-items: center; justify-content: center; position: relative; }
+        .telemetry-ring::before { content: ""; position: absolute; inset: 4px; border-radius: 50%; background: #0f172a; }
+
+        .card-trevisane { 
+            width: 60px; height: 100px; background-color: #fef3c7; border: 2px solid #b45309; 
+            border-radius: 6px; box-shadow: 2px 3px 6px rgba(0,0,0,0.5), inset 0 0 8px rgba(0,0,0,0.1); 
+            display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative;
+            color: #111; font-weight: bold; font-family: 'Share Tech Mono', monospace; cursor: pointer; transition: transform 0.2s;
+        }
+        .card-trevisane::before { content: ""; position: absolute; inset: 3px; border: 1px solid rgba(180, 83, 9, 0.3); border-radius: 3px; pointer-events: none; }
+        .card-trevisane:active { transform: scale(0.95); }
+        .card-trevisane.spade { color: #1e3a8a; } 
+        .card-trevisane.coppe { color: #b91c1c; } 
+        .card-trevisane.denari { color: #d97706; } 
+        .card-trevisane.bastoni { color: #14532d; } 
+        .card-corner { position: absolute; top: 2px; left: 4px; font-size: 11px; }
+        .card-center { font-size: 32px; filter: drop-shadow(1px 1px 1px rgba(0,0,0,0.2)); }
+
+        #drawing-canvas { background: white; border-radius: 12px; cursor: crosshair; touch-action: none; width: 100%; height: 250px; box-shadow: inset 0 0 10px rgba(0,0,0,0.1); }
+
+        .modal-overlay { background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); position: absolute; inset: 0; z-index: 100; display: none; justify-content: center; align-items: center; padding: 20px; }
+        .modal-overlay.active { display: flex; }
+    </style>
+</head>
+<body>
+<div id="app-wrapper">
+
+    <!-- Custom Toast -->
+    <div id="custom-toast" class="fixed top-24 left-1/2 -translate-x-1/2 w-[90%] max-w-sm bg-slate-800/95 backdrop-blur-md text-white px-5 py-3 rounded-2xl text-xs font-bold shadow-2xl transition-all duration-300 opacity-0 translate-y-[-20px] pointer-events-none z-[110] text-center flex items-center justify-center gap-2 border border-slate-600"></div>
+
+    <!-- Custom Confirm Modal -->
+    <div id="confirm-modal" class="modal-overlay">
+        <div class="bg-slate-900 border border-slate-600 rounded-3xl p-6 w-full max-w-xs shadow-2xl text-center relative">
+            <h2 id="confirm-title" class="text-xl font-extrabold text-white mb-2">Bestätigen</h2>
+            <p id="confirm-text" class="text-xs text-slate-300 mb-6">Möchtest du das wirklich tun?</p>
+            <div class="flex gap-3">
+                <button onclick="app.closeConfirmModal(false)" class="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 rounded-xl transition">Abbrechen</button>
+                <button onclick="app.closeConfirmModal(true)" class="flex-1 bg-red-600 hover:bg-red-500 text-white font-bold py-3 rounded-xl transition shadow-[0_0_15px_rgba(220,38,38,0.5)]">Ja, sicher</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SOS Modal -->
+    <div id="sos-modal" class="modal-overlay">
+        <div class="bg-slate-900 border border-red-500/50 rounded-3xl p-6 w-full max-w-sm shadow-[0_0_40px_rgba(220,38,38,0.3)] text-center relative">
+            <button onclick="app.closeSOS()" class="absolute top-4 right-4 text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
+            <div class="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center text-white text-3xl mx-auto mb-4 animate-pulse shadow-[0_0_20px_rgba(220,38,38,0.8)]"><i class="fa-solid fa-life-ring"></i></div>
+            <h2 class="text-2xl font-extrabold text-white mb-2">SOS Zentrale</h2>
+            <p class="text-xs text-slate-300 mb-6">Wähle den passenden Notdienst.</p>
+            
+            <div class="space-y-3">
+                <a href="tel:112" class="block w-full bg-red-600 hover:bg-red-500 text-white font-bold py-3 rounded-xl transition"><i class="fa-solid fa-phone mr-2"></i> 112 (Polizei/Ambulanz)</a>
+                <a href="tel:803116" class="block w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl transition"><i class="fa-solid fa-car-burst mr-2"></i> 803 116 (ACI Pannenhilfe)</a>
+                <button onclick="app.sendEmergencyEmail()" class="w-full bg-slate-700 hover:bg-slate-600 border border-slate-500 text-white font-bold py-3 rounded-xl transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-location-crosshairs text-green-400"></i> GPS-Standort via Mail senden
+                </button>
+            </div>
+            
+            <div class="mt-6 pt-4 border-t border-slate-800 text-left">
+                <p class="text-[10px] text-slate-400 uppercase tracking-widest mb-2 font-bold">Wichtige Vokabeln <i class="fa-solid fa-volume-high text-blue-400 cursor-pointer ml-1" onclick="app.speak('Abbiamo bisogno di un medico urgente!')"></i></p>
+                <p class="text-xs text-white">"Abbiamo bisogno di un medico!" <br><span class="text-[10px] text-slate-400">(Wir brauchen einen Arzt)</span></p>
+            </div>
+        </div>
+    </div>
+
+    <header class="bg-gradient-to-br from-slate-900 to-blue-950/90 backdrop-blur-md px-5 pt-safe-top shadow-2xl z-40 flex-none h-[100px] flex items-center justify-between rounded-b-3xl relative overflow-hidden border-b border-white/10">
+        <div class="absolute -right-10 -top-10 opacity-5 text-white text-9xl"><i class="fa-solid fa-map-location-dot"></i></div>
+        <div class="mt-4 relative z-10">
+            <div class="flex items-center gap-2">
+                <h1 class="text-2xl font-extrabold text-white tracking-tight leading-none text-glow">Bella Italia '26</h1>
+                <span class="bg-amber-500/20 text-amber-400 border border-amber-500/50 px-2 py-0.5 rounded text-[9px] font-black uppercase shadow-[0_0_10px_rgba(245,158,11,0.2)]">Lvl <span id="user-level">1</span></span>
+            </div>
+            <p class="text-[10px] text-blue-300 font-bold uppercase tracking-wider mt-1.5 flex items-center gap-1.5"><i class="fa-solid fa-van-shuttle"></i> Toyota Proace Verso 2.0 • 4 Pers.</p>
+        </div>
+        <div class="flex gap-2 mt-4 relative z-10">
+            <button onclick="app.triggerLiveNotification()" class="h-11 w-11 bg-yellow-600/20 hover:bg-yellow-500/40 rounded-full flex items-center justify-center text-yellow-500 border border-yellow-500/50 transition shadow-inner">
+                <i class="fa-solid fa-bell text-lg"></i>
+            </button>
+            <button onclick="app.openSOS()" class="h-11 w-11 bg-red-600 hover:bg-red-500 rounded-full flex items-center justify-center text-white shadow-[0_0_20px_rgba(220,38,38,0.6)] active:scale-90 transition border border-red-400 animate-pulse">
+                <i class="fa-solid fa-life-ring text-xl"></i>
+            </button>
+        </div>
+    </header>
+
+    <main class="flex-1 overflow-y-auto relative pb-20" id="main-scroll">
+        
+        <!-- ==================== TAB: ROUTE ==================== -->
+        <section id="tab-route" class="tab-content block px-4 pt-4">
+            
+            <!-- Live-Routen Simulator -->
+            <div class="bg-gradient-to-br from-blue-900 to-indigo-950 text-white rounded-3xl p-4 shadow-lg mb-6 border border-blue-800 relative overflow-hidden">
+                <div class="absolute -right-4 -bottom-4 text-6xl opacity-10"><i class="fa-solid fa-road"></i></div>
+                <h3 class="font-heading font-extrabold text-sm mb-2 flex items-center justify-between relative z-10">
+                    <span><i class="fa-solid fa-compass text-blue-400 mr-2"></i> Live-Routen-Cockpit</span>
+                    <span id="route-badge" class="text-[9px] bg-blue-500 px-2 py-0.5 rounded-full font-mono shadow-sm">1. Etappe</span>
+                </h3>
+                
+                <div class="grid grid-cols-2 gap-3 my-2 text-center relative z-10">
+                    <div class="bg-slate-900/50 rounded-xl p-2 border border-slate-700">
+                        <p class="text-[10px] text-blue-300 uppercase font-bold tracking-wider">Start</p>
+                        <p id="current-location-text" class="font-bold text-xs mt-0.5 text-white">Sissach</p>
+                    </div>
+                    <div class="bg-slate-900/50 rounded-xl p-2 border border-slate-700">
+                        <p class="text-[10px] text-blue-300 uppercase font-bold tracking-wider">Nächstes Ziel</p>
+                        <p id="next-stop-text" class="font-bold text-xs mt-0.5 text-white">Orvieto</p>
+                    </div>
+                </div>
+
+                <div class="relative w-full h-6 flex items-center my-4 z-10 px-2">
+                    <div class="absolute w-[calc(100%-1rem)] h-1 bg-white/20 rounded-full left-2"></div>
+                    <div id="route-indicator-bar" class="absolute h-1 bg-amber-400 rounded-full transition-all duration-700 left-2 shadow-[0_0_10px_rgba(251,191,36,0.8)]" style="width: 0%"></div>
+                    
+                    <div class="absolute left-2 w-3 h-3 rounded-full bg-amber-500 border-2 border-white cursor-pointer z-10" onclick="app.setRouteSim(0)"></div>
+                    <div class="absolute left-[33%] w-3 h-3 rounded-full bg-slate-400 border-2 border-white cursor-pointer z-10" onclick="app.setRouteSim(1)"></div>
+                    <div class="absolute left-[66%] w-3 h-3 rounded-full bg-slate-400 border-2 border-white cursor-pointer z-10" onclick="app.setRouteSim(2)"></div>
+                    <div class="absolute right-2 w-3 h-3 rounded-full bg-slate-400 border-2 border-white cursor-pointer z-10" onclick="app.setRouteSim(3)"></div>
+                </div>
+
+                <div class="text-[11px] text-blue-100 flex justify-between items-center bg-blue-950/60 p-2.5 rounded-xl border border-blue-800/50 mt-2 relative z-10 backdrop-blur-sm">
+                    <span class="font-bold"><i class="fa-solid fa-hourglass-half text-amber-400 mr-1"></i> ETA: <strong id="eta-time-text" class="text-white">-- : --</strong></span>
+                    <button onclick="app.simulateNextRouteStep()" class="text-[10px] bg-blue-600 hover:bg-blue-500 px-3 py-1.5 rounded-lg font-bold transition shadow-md border border-blue-400">Vorlauf <i class="fa-solid fa-forward-step ml-1"></i></button>
+                </div>
+            </div>
+
+            <!-- Cockpit (Live Telemetrie) -->
+            <div class="glass-card rounded-3xl p-5 mb-6 relative overflow-hidden group">
+                <div class="absolute -right-10 -bottom-10 w-40 h-40 bg-blue-600 rounded-full mix-blend-screen filter blur-[40px] opacity-20"></div>
+                <div class="flex justify-between items-center mb-4 relative z-10">
+                    <h3 class="font-bold text-slate-100 text-sm flex items-center gap-2"><i class="fa-solid fa-satellite-dish text-blue-400 animate-pulse"></i> Telemetrie Tracker</h3>
+                    <button onclick="app.speakKidsETA()" class="bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] font-extrabold px-3 py-1.5 rounded-full shadow-[0_0_10px_rgba(79,70,229,0.4)] cursor-pointer"><i class="fa-solid fa-bullhorn"></i> Ansage</button>
+                </div>
+                
+                <div class="flex gap-2 mb-4 relative z-10">
+                    <select id="eta-destination" class="flex-1 bg-slate-900/50 border border-slate-700 rounded-xl p-2.5 text-[11px] font-bold text-slate-200 outline-none focus:border-blue-500">
+                        <option value="42.7174|12.1116|Orvieto">1. Orvieto</option>
+                        <option value="41.9028|12.4964|Rom">2. Rom</option>
+                        <option value="39.8885|18.1130|Salento">3. Salento</option>
+                        <option value="46.0463|11.7460|Lamon">4. Lamon</option>
+                    </select>
+                    <button onclick="app.calculateLiveETA()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold px-4 py-2.5 rounded-xl text-xs shadow-lg flex items-center gap-2 cursor-pointer border border-blue-400">Orten <i class="fa-solid fa-location-crosshairs"></i></button>
+                </div>
+
+                <div class="bg-slate-950/80 rounded-2xl p-4 relative z-10 border border-slate-800 shadow-inner flex items-center justify-between">
+                    <div>
+                        <p class="text-[9px] text-blue-400 uppercase font-bold tracking-widest mb-1.5">Live GPS Distanz</p>
+                        <p id="eta-result" class="font-mono text-lg font-extrabold text-white text-glow">GPS abfragen...</p>
+                    </div>
+                    <div class="flex gap-3">
+                        <div class="text-center">
+                            <div class="telemetry-ring" id="speed-ring" style="--val: 0%;"><span class="relative z-10 font-mono-tech text-lg text-white font-bold" id="telemetry-speed">0</span></div>
+                            <p class="text-[8px] text-slate-400 mt-1 uppercase font-bold">km/h</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Leaflet Map Integration -->
+            <div class="mb-8">
+                <button onclick="app.toggleMap()" class="w-full bg-slate-800/80 border border-slate-700 p-3 rounded-2xl flex justify-between items-center text-xs font-bold text-slate-200 transition cursor-pointer hover:bg-slate-700">
+                    <span class="flex items-center gap-2"><i class="fa-solid fa-map text-blue-400"></i> Interaktive Route Karte öffnen</span>
+                    <i class="fa-solid fa-chevron-down text-slate-500 transition-transform" id="map-chevron"></i>
+                </button>
+                <div id="map-container-wrapper" class="hidden mt-2 bg-slate-900/80 rounded-2xl p-2 border border-slate-700 shadow-inner">
+                    <div id="trip-map" style="height: 280px; width: 100%; border-radius: 12px; z-index: 1;"></div>
+                </div>
+            </div>
+
+            <div class="relative">
+                <div class="timeline-line"></div>
+                <div class="space-y-8 pl-8 relative pb-6">
+                    
+                    <!-- STOP 1: ORVIETO -->
+                    <div class="timeline-card glass-card rounded-3xl overflow-hidden">
+                        <span class="absolute -left-[40px] top-5 h-6 w-6 rounded-full bg-blue-500 ring-[5px] ring-[#0B1121] flex items-center justify-center shadow-[0_0_15px_rgba(59,130,246,0.6)]"><span class="h-2.5 w-2.5 bg-white rounded-full"></span></span>
+                        <div class="h-40 relative bg-slate-800">
+                            <img src="https://images.unsplash.com/photo-1692257919985-78e72fb89a9c?auto=format&fit=crop&w=600&q=80" onerror="this.src='https://placehold.co/600x400/1e3a8a/FFF?text=Orvieto'" class="w-full h-full object-cover opacity-80">
+                            <div class="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-transparent"></div>
+                            <div class="absolute bottom-0 left-0 w-full p-4">
+                                <span class="text-[9px] font-bold text-white uppercase tracking-widest bg-blue-600/80 px-2.5 py-1 rounded-lg backdrop-blur-md shadow-sm">13. Juli • 1 Nacht</span>
+                                <h3 class="font-heading font-extrabold text-white text-xl mt-1.5 text-glow">1. Orvieto</h3>
+                            </div>
+                        </div>
+                        <div class="p-4">
+                            <div class="flex justify-between items-center mb-4 bg-slate-900/50 p-3 rounded-2xl border border-slate-700 shadow-inner">
+                                <div>
+                                    <p class="text-xs font-extrabold text-slate-200 mb-0.5"><i class="fa-solid fa-bed text-blue-400 w-5"></i> B&B La Casa Di Tufo</p>
+                                    <p class="text-[10px] text-slate-400 font-medium"><i class="fa-solid fa-location-dot w-4"></i> Via Del Paradiso 11, Orvieto</p>
+                                </div>
+                                <a href="https://maps.google.com/?q=Via+Del+Paradiso+11+Orvieto" target="_blank" class="bg-blue-600/20 p-2.5 rounded-xl text-blue-400 border border-blue-500/30 hover:bg-blue-600/40 transition">
+                                    <i class="fa-solid fa-map-location-dot text-lg"></i>
+                                </a>
+                            </div>
+                            <!-- Official Booking Details -->
+                            <div class="mb-4">
+                                <button onclick="app.toggleAccordion('acc-orvieto', this)" class="w-full bg-slate-800/80 border border-slate-700 p-3 rounded-2xl flex justify-between items-center text-[11px] font-bold text-slate-200 transition cursor-pointer hover:bg-slate-700">
+                                    <span class="flex items-center gap-2"><i class="fa-solid fa-file-invoice text-blue-400"></i> Offizielle Buchungsdetails</span>
+                                    <i class="fa-solid fa-chevron-down text-slate-500 transition-transform"></i>
+                                </button>
+                                <div id="acc-orvieto" class="hidden mt-2 bg-slate-900/80 rounded-2xl p-3 border border-slate-700 text-[10px] text-slate-300 shadow-inner">
+                                    <ul class="space-y-2">
+                                        <li class="flex justify-between"><span>PIN für Zugang:</span> <b class="text-white font-mono text-xs text-blue-300">1296</b></li>
+                                        <li class="flex justify-between"><span>Buchungs-Ref:</span> <b class="text-white font-mono text-xs">5901798677</b></li>
+                                        <li class="flex justify-between"><span>Check-in:</span> <b class="text-white">14:00 - 20:30</b></li>
+                                        <li class="flex justify-between"><span>Zimmer/Betten:</span> <b class="text-white text-right">Vierbettzimmer<br>1 Franz. + 1 Doppelbett</b></li>
+                                        <li class="text-amber-400 font-bold border-t border-slate-700 pt-2 mt-1 flex items-start gap-1.5"><i class="fa-solid fa-triangle-exclamation mt-0.5"></i> <span>Achtung: Unterkunft ist nur über 2 Treppen erreichbar, kein Aufzug! (1-Nacht-Tasche nutzen!)</span></li>
+                                        <li class="flex justify-between border-t border-slate-700 pt-2 mt-1"><span>Endpreis (inkl. Tax):</span> <b class="text-white text-xs">133,80 €</b></li>
+                                    </ul>
+                                </div>
+                            </div>
+                            
+                            <!-- Gallery Orvieto -->
+                            <h4 class="font-bold text-slate-300 text-xs mb-2 flex items-center gap-2"><i class="fa-solid fa-binoculars text-blue-500"></i> Entdecken & Umgebung (Klicks)</h4>
+                            <div class="flex gap-3 overflow-x-auto pb-2 scrollbar-hide snap-x">
+                                <a href="https://maps.google.com/?q=Foro+Boario+Orvieto+Parking" target="_blank" class="shrink-0 w-36 bg-slate-800 rounded-xl overflow-hidden border border-slate-700 snap-start block hover:border-blue-500 transition">
+                                    <img src="https://images.unsplash.com/photo-1643194684988-cb58045ca35e?auto=format&fit=crop&w=300&q=80" class="h-24 w-full object-cover opacity-80" onerror="this.src='https://placehold.co/300x200/1e293b/FFF?text=Parken'">
+                                    <div class="p-2"><p class="text-[10px] font-bold text-slate-200">Parken: Foro Boario</p><p class="text-[9px] text-slate-500 mt-0.5">Rolltreppe im Fels hoch in die Altstadt!</p></div>
+                                </a>
+                                <a href="https://maps.google.com/?q=Pozzo+di+San+Patrizio" target="_blank" class="shrink-0 w-36 bg-slate-800 rounded-xl overflow-hidden border border-slate-700 snap-start block hover:border-blue-500 transition">
+                                    <img src="https://images.unsplash.com/photo-1601018804791-c5ba5334c935?auto=format&fit=crop&w=300&q=80" class="h-24 w-full object-cover opacity-80" onerror="this.src='https://placehold.co/300x200/1e293b/FFF?text=Brunnen'">
+                                    <div class="p-2"><p class="text-[10px] font-bold text-slate-200">Pozzo S. Patrizio</p><p class="text-[9px] text-slate-500 mt-0.5">Gigantischer historischer Esel-Brunnen.</p></div>
+                                </a>
+                                <a href="https://maps.google.com/?q=Torre+del+Moro+Orvieto" target="_blank" class="shrink-0 w-36 bg-slate-800 rounded-xl overflow-hidden border border-slate-700 snap-start block hover:border-blue-500 transition">
+                                    <img src="https://images.unsplash.com/photo-1601018804791-c5ba5334c935?auto=format&fit=crop&w=300&q=80" class="h-24 w-full object-cover opacity-80" onerror="this.src='https://placehold.co/300x200/1e293b/FFF?text=Turm'">
+                                    <div class="p-2"><p class="text-[10px] font-bold text-slate-200">Torre del Moro</p><p class="text-[9px] text-slate-500 mt-0.5">Der beste 360-Grad Blick über Orvieto.</p></div>
+                                </a>
+                                <a href="https://maps.google.com/?q=Civita+di+Bagnoregio" target="_blank" class="shrink-0 w-36 bg-slate-800 rounded-xl overflow-hidden border border-slate-700 snap-start block hover:border-blue-500 transition">
+                                    <img src="https://images.unsplash.com/photo-1549488344-c7ab2a70ccfa?auto=format&fit=crop&w=300&q=80" class="h-24 w-full object-cover opacity-80" onerror="this.src='https://placehold.co/300x200/1e293b/FFF?text=Civita'">
+                                    <div class="p-2"><p class="text-[10px] font-bold text-slate-200">Civita Bagnoregio</p><p class="text-[9px] text-slate-500 mt-0.5">Die spektakuläre "sterbende Stadt".</p></div>
+                                </a>
+                                <a href="https://maps.google.com/?q=Lago+di+Bolsena" target="_blank" class="shrink-0 w-36 bg-slate-800 rounded-xl overflow-hidden border border-slate-700 snap-start block hover:border-blue-500 transition">
+                                    <img src="https://images.unsplash.com/photo-1563503254924-f7b572242137?auto=format&fit=crop&w=300&q=80" class="h-24 w-full object-cover opacity-80" onerror="this.src='https://placehold.co/300x200/1e293b/FFF?text=Bolsenasee'">
+                                    <div class="p-2"><p class="text-[10px] font-bold text-slate-200">Lago di Bolsena</p><p class="text-[9px] text-slate-500 mt-0.5">Riesiger Vulkansee zum Baden (15km).</p></div>
+                                </a>
+                                <a href="https://maps.google.com/?q=Cascata+delle+Marmore" target="_blank" class="shrink-0 w-36 bg-slate-800 rounded-xl overflow-hidden border border-slate-700 snap-start block hover:border-blue-500 transition">
+                                    <img src="https://images.unsplash.com/photo-1596484552834-6a58f96af5bf?auto=format&fit=crop&w=300&q=80" class="h-24 w-full object-cover opacity-80" onerror="this.src='https://placehold.co/300x200/1e293b/FFF?text=Marmore'">
+                                    <div class="p-2"><p class="text-[10px] font-bold text-slate-200">Cascata Marmore</p><p class="text-[9px] text-slate-500 mt-0.5">Höchster künstlicher Wasserfall (40km).</p></div>
+                                </a>
+                                <a href="https://maps.google.com/?q=Parco+dei+Mostri+Bomarzo" target="_blank" class="shrink-0 w-36 bg-slate-800 rounded-xl overflow-hidden border border-slate-700 snap-start block hover:border-blue-500 transition">
+                                    <img src="https://images.unsplash.com/photo-1602934585418-f588bea4215c?auto=format&fit=crop&w=300&q=80" class="h-24 w-full object-cover opacity-80" onerror="this.src='https://placehold.co/300x200/1e293b/FFF?text=Monsterpark'">
+                                    <div class="p-2"><p class="text-[10px] font-bold text-slate-200">Monsterpark Bomarzo</p><p class="text-[9px] text-slate-500 mt-0.5">Riesige Steinmonster im Wald. Kids lieben es!</p></div>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- STOP 2: ROM -->
+                    <div class="timeline-card glass-card rounded-3xl overflow-hidden">
+                        <span class="absolute -left-[40px] top-5 h-6 w-6 rounded-full bg-red-500 ring-[5px] ring-[#0B1121] flex items-center justify-center shadow-[0_0_15px_rgba(239,68,68,0.6)]"><span class="h-2.5 w-2.5 bg-white rounded-full"></span></span>
+                        <div class="h-40 relative bg-slate-800">
+                            <img src="https://images.unsplash.com/photo-1552832230-c0197dd311b5?auto=format&fit=crop&w=600&q=80" onerror="this.src='https://placehold.co/600x400/991b1b/FFF?text=Rom'" class="w-full h-full object-cover opacity-80">
+                            <div class="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-transparent"></div>
+                            <div class="absolute bottom-0 left-0 w-full p-4">
+                                <span class="text-[9px] font-bold text-white uppercase tracking-widest bg-red-600/80 px-2.5 py-1 rounded-lg backdrop-blur-md shadow-sm">14. - 16. Juli • 2 Nächte</span>
+                                <h3 class="font-heading font-extrabold text-white text-xl mt-1.5 text-glow">2. Rom</h3>
+                            </div>
+                        </div>
+                        <div class="p-4">
+                            <div class="flex justify-between items-center mb-4 bg-slate-900/50 p-3 rounded-2xl border border-slate-700 shadow-inner">
+                                <div>
+                                    <p class="text-xs font-extrabold text-slate-200 mb-0.5"><i class="fa-solid fa-key text-red-400 w-5"></i> Aurelia Vatican Apts.</p>
+                                    <p class="text-[10px] text-slate-400 font-medium"><i class="fa-solid fa-location-dot w-4"></i> Via Dei Laterizi 20, Rom</p>
+                                </div>
+                                <a href="https://maps.google.com/?q=Via+Dei+Laterizi+20+Rome" target="_blank" class="bg-red-600/20 p-2.5 rounded-xl text-red-400 border border-red-500/30 hover:bg-red-600/40 transition">
+                                    <i class="fa-solid fa-map-location-dot text-lg"></i>
+                                </a>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <button onclick="app.toggleAccordion('acc-rom', this)" class="w-full bg-slate-800/80 border border-slate-700 p-3 rounded-2xl flex justify-between items-center text-[11px] font-bold text-slate-200 transition cursor-pointer hover:bg-slate-700">
+                                    <span class="flex items-center gap-2"><i class="fa-solid fa-file-invoice text-red-400"></i> Offizielle Buchungsdetails</span>
+                                    <i class="fa-solid fa-chevron-down text-slate-500 transition-transform"></i>
+                                </button>
+                                <div id="acc-rom" class="hidden mt-2 bg-slate-900/80 rounded-2xl p-3 border border-slate-700 text-[10px] text-slate-300 shadow-inner">
+                                    <ul class="space-y-2">
+                                        <li class="flex justify-between"><span>PIN für Zugang:</span> <b class="text-white font-mono text-xs text-red-300">2875</b></li>
+                                        <li class="flex justify-between"><span>Buchungs-Ref:</span> <b class="text-white font-mono text-xs">6306658109</b></li>
+                                        <li class="flex justify-between"><span>Check-in:</span> <b class="text-white">14:00 - 23:00</b></li>
+                                        <li class="flex justify-between"><span>Lage & Apartment:</span> <b class="text-white text-right">Erdgeschoss (Kein Schleppen!)<br>1 Schlafzimmer</b></li>
+                                        <li class="text-blue-400 font-bold border-t border-slate-700 pt-2 mt-1 flex items-start gap-1.5"><i class="fa-solid fa-square-parking mt-0.5"></i> <span>Öffentliche Parkplätze (Gratis) direkt in der Nähe vorhanden. Proace dort stehen lassen!</span></li>
+                                        <li class="flex justify-between border-t border-slate-700 pt-2 mt-1"><span>Endpreis (inkl. Tax):</span> <b class="text-white text-xs">398,34 €</b></li>
+                                    </ul>
+                                </div>
+                            </div>
+                            
+                            <h4 class="font-bold text-slate-300 text-xs mb-2 flex items-center gap-2"><i class="fa-solid fa-binoculars text-red-500"></i> Rom entdecken (Klicks)</h4>
+                            <div class="flex gap-3 overflow-x-auto pb-2 scrollbar-hide snap-x">
+                                <a href="https://maps.google.com/?q=Colosseum+Rome" target="_blank" class="shrink-0 w-36 bg-slate-800 rounded-xl overflow-hidden border border-slate-700 snap-start block hover:border-red-500 transition">
+                                    <img src="https://images.unsplash.com/photo-1552832230-c0197dd311b5?auto=format&fit=crop&w=300&q=80" class="h-24 w-full object-cover opacity-80" onerror="this.src='https://placehold.co/300x200/1e293b/FFF?text=Kolosseum'">
+                                    <div class="p-2"><p class="text-[10px] font-bold text-slate-200">Kolosseum</p><p class="text-[9px] text-slate-500 mt-0.5">Das absolute Wahrzeichen.</p></div>
+                                </a>
+                                <a href="https://maps.google.com/?q=St+Peter's+Basilica+Vatican" target="_blank" class="shrink-0 w-36 bg-slate-800 rounded-xl overflow-hidden border border-slate-700 snap-start block hover:border-red-500 transition">
+                                    <img src="https://images.unsplash.com/photo-1531572753322-ad063cecc140?auto=format&fit=crop&w=300&q=80" class="h-24 w-full object-cover opacity-80" onerror="this.src='https://placehold.co/300x200/1e293b/FFF?text=Vatikan'">
+                                    <div class="p-2"><p class="text-[10px] font-bold text-slate-200">Vatikan & Petersdom</p><p class="text-[9px] text-slate-500 mt-0.5">Extrem nah an eurem Apartment!</p></div>
+                                </a>
+                                <a href="https://maps.google.com/?q=Pantheon+Rome" target="_blank" class="shrink-0 w-36 bg-slate-800 rounded-xl overflow-hidden border border-slate-700 snap-start block hover:border-red-500 transition">
+                                    <img src="https://images.unsplash.com/photo-1552832230-c0197dd311b5?auto=format&fit=crop&w=300&q=80" class="h-24 w-full object-cover opacity-80" onerror="this.src='https://placehold.co/300x200/1e293b/FFF?text=Pantheon'">
+                                    <div class="p-2"><p class="text-[10px] font-bold text-slate-200">Pantheon</p><p class="text-[9px] text-slate-500 mt-0.5">Gigantisches Loch in der Kuppel.</p></div>
+                                </a>
+                                <a href="https://maps.google.com/?q=Trevi+Fountain+Rome" target="_blank" class="shrink-0 w-36 bg-slate-800 rounded-xl overflow-hidden border border-slate-700 snap-start block hover:border-red-500 transition">
+                                    <img src="https://images.unsplash.com/photo-1542831371-29b0f74f9713?auto=format&fit=crop&w=300&q=80" class="h-24 w-full object-cover opacity-80" onerror="this.src='https://placehold.co/300x200/1e293b/FFF?text=Trevi'">
+                                    <div class="p-2"><p class="text-[10px] font-bold text-slate-200">Trevi Brunnen</p><p class="text-[9px] text-slate-500 mt-0.5">Tipp: Geht extrem früh morgens hin!</p></div>
+                                </a>
+                                <a href="https://maps.google.com/?q=Piazza+Navona+Rome" target="_blank" class="shrink-0 w-36 bg-slate-800 rounded-xl overflow-hidden border border-slate-700 snap-start block hover:border-red-500 transition">
+                                    <img src="https://images.unsplash.com/photo-1596627885068-1ebc9ec100c5?auto=format&fit=crop&w=300&q=80" class="h-24 w-full object-cover opacity-80" onerror="this.src='https://placehold.co/300x200/1e293b/FFF?text=Navona'">
+                                    <div class="p-2"><p class="text-[10px] font-bold text-slate-200">Piazza Navona</p><p class="text-[9px] text-slate-500 mt-0.5">Perfekt am Abend. Strassenkünstler!</p></div>
+                                </a>
+                                <a href="https://maps.google.com/?q=Bocca+della+Verita+Rome" target="_blank" class="shrink-0 w-36 bg-slate-800 rounded-xl overflow-hidden border border-slate-700 snap-start block hover:border-red-500 transition">
+                                    <img src="https://images.unsplash.com/photo-1552832230-c0197dd311b5?auto=format&fit=crop&w=300&q=80" class="h-24 w-full object-cover opacity-80" onerror="this.src='https://placehold.co/300x200/1e293b/FFF?text=Bocca'">
+                                    <div class="p-2"><p class="text-[10px] font-bold text-slate-200">Bocca della Verità</p><p class="text-[9px] text-slate-500 mt-0.5">Der legendäre Lügendetektor-Mund.</p></div>
+                                </a>
+                                <a href="https://maps.google.com/?q=Ostia+Antica" target="_blank" class="shrink-0 w-36 bg-slate-800 rounded-xl overflow-hidden border border-slate-700 snap-start block hover:border-red-500 transition">
+                                    <img src="https://images.unsplash.com/photo-1616053704262-d9ee70e176df?auto=format&fit=crop&w=300&q=80" class="h-24 w-full object-cover opacity-80" onerror="this.src='https://placehold.co/300x200/1e293b/FFF?text=Ostia'">
+                                    <div class="p-2"><p class="text-[10px] font-bold text-slate-200">Ostia Antica</p><p class="text-[9px] text-slate-500 mt-0.5">Die alte Hafenstadt Roms (25km).</p></div>
+                                </a>
+                                <a href="https://maps.google.com/?q=Villa+d'Este+Tivoli" target="_blank" class="shrink-0 w-36 bg-slate-800 rounded-xl overflow-hidden border border-slate-700 snap-start block hover:border-red-500 transition">
+                                    <img src="https://images.unsplash.com/photo-1582283832049-cd87bbcc9c53?auto=format&fit=crop&w=300&q=80" class="h-24 w-full object-cover opacity-80" onerror="this.src='https://placehold.co/300x200/1e293b/FFF?text=Tivoli'">
+                                    <div class="p-2"><p class="text-[10px] font-bold text-slate-200">Villa d'Este (Tivoli)</p><p class="text-[9px] text-slate-500 mt-0.5">Hunderte Brunnen & Gärten (30km).</p></div>
+                                </a>
+                                <a href="https://maps.google.com/?q=Mercato+di+Testaccio" target="_blank" class="shrink-0 w-36 bg-slate-800 rounded-xl overflow-hidden border border-slate-700 snap-start block hover:border-red-500 transition">
+                                    <img src="https://images.unsplash.com/photo-1542831371-29b0f74f9713?auto=format&fit=crop&w=300&q=80" class="h-24 w-full object-cover opacity-80" onerror="this.src='https://placehold.co/300x200/1e293b/FFF?text=Mercato'">
+                                    <div class="p-2"><p class="text-[10px] font-bold text-slate-200">Mercato Testaccio</p><p class="text-[9px] text-slate-500 mt-0.5">Echtes Streetfood & bestes Trapizzino Roms.</p></div>
+                                </a>
+                                <a href="https://maps.google.com/?q=Explora+Museo+dei+Bambini+Roma" target="_blank" class="shrink-0 w-36 bg-slate-800 rounded-xl overflow-hidden border border-slate-700 snap-start block hover:border-red-500 transition">
+                                    <img src="https://images.unsplash.com/photo-1566127444979-b3d2b654e3d7?auto=format&fit=crop&w=300&q=80" class="h-24 w-full object-cover opacity-80" onerror="this.src='https://placehold.co/300x200/1e293b/FFF?text=Explora'">
+                                    <div class="p-2"><p class="text-[10px] font-bold text-slate-200">Explora Museum</p><p class="text-[9px] text-slate-500 mt-0.5">Gigantisches interaktives Kindermuseum.</p></div>
+                                </a>
+                                <a href="https://maps.google.com/?q=Castel+Sant'Angelo" target="_blank" class="shrink-0 w-36 bg-slate-800 rounded-xl overflow-hidden border border-slate-700 snap-start block hover:border-red-500 transition">
+                                    <img src="https://images.unsplash.com/photo-1582283832049-cd87bbcc9c53?auto=format&fit=crop&w=300&q=80" class="h-24 w-full object-cover opacity-80" onerror="this.src='https://placehold.co/300x200/1e293b/FFF?text=Engelsburg'">
+                                    <div class="p-2"><p class="text-[10px] font-bold text-slate-200">Engelsburg</p><p class="text-[9px] text-slate-500 mt-0.5">Alte Festung am Tiber mit Geheimgängen.</p></div>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- STOP 3: APULIEN -->
+                    <div class="timeline-card glass-card rounded-3xl overflow-hidden">
+                        <span class="absolute -left-[40px] top-5 h-6 w-6 rounded-full bg-yellow-500 ring-[5px] ring-[#0B1121] flex items-center justify-center shadow-[0_0_15px_rgba(234,179,8,0.6)]"><span class="h-2.5 w-2.5 bg-white rounded-full"></span></span>
+                        <div class="h-40 relative bg-slate-800">
+                            <img src="https://images.unsplash.com/photo-1590059345224-d9ee787e9142?auto=format&fit=crop&w=600&q=80" onerror="this.src='https://placehold.co/600x400/ca8a04/FFF?text=Salento'" class="w-full h-full object-cover opacity-80">
+                            <div class="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-transparent"></div>
+                            <div class="absolute bottom-0 left-0 w-full p-4">
+                                <span class="text-[9px] font-bold text-white uppercase tracking-widest bg-yellow-600/80 px-2.5 py-1 rounded-lg backdrop-blur-md shadow-sm">16. - 21. Juli • 5 Nächte</span>
+                                <h3 class="font-heading font-extrabold text-white text-xl mt-1.5 text-glow">3. Salento Strand</h3>
+                            </div>
+                        </div>
+                        <div class="p-4">
+                            <div class="flex justify-between items-center mb-4 bg-slate-900/50 p-3 rounded-2xl border border-slate-700 shadow-inner">
+                                <div>
+                                    <p class="text-xs font-extrabold text-slate-200 mb-0.5"><i class="fa-solid fa-building text-yellow-400 w-5"></i> Smeraldo Residence</p>
+                                    <p class="text-[10px] text-slate-400 font-medium"><i class="fa-solid fa-location-dot w-4"></i> Via O. Nelson 21, T.S.G.</p>
+                                </div>
+                                <a href="https://maps.google.com/?q=Via+O.+Nelson+21+Torre+San+Giovanni+Lecce" target="_blank" class="bg-yellow-600/20 p-2.5 rounded-xl text-yellow-400 border border-yellow-500/30 hover:bg-yellow-600/40 transition">
+                                    <i class="fa-solid fa-map-location-dot text-lg"></i>
+                                </a>
+                            </div>
+
+                            <div class="mb-4">
+                                <button onclick="app.toggleAccordion('acc-salento', this)" class="w-full bg-slate-800/80 border border-slate-700 p-3 rounded-2xl flex justify-between items-center text-[11px] font-bold text-slate-200 transition cursor-pointer hover:bg-slate-700">
+                                    <span class="flex items-center gap-2"><i class="fa-solid fa-file-invoice text-yellow-400"></i> Offizielle Buchungsdetails</span>
+                                    <i class="fa-solid fa-chevron-down text-slate-500 transition-transform"></i>
+                                </button>
+                                <div id="acc-salento" class="hidden mt-2 bg-slate-900/80 rounded-2xl p-3 border border-slate-700 text-[10px] text-slate-300 shadow-inner">
+                                    <ul class="space-y-2">
+                                        <li class="flex justify-between"><span>PIN für Zugang:</span> <b class="text-white font-mono text-xs text-yellow-300">3134</b></li>
+                                        <li class="flex justify-between"><span>Buchungs-Ref:</span> <b class="text-white font-mono text-xs">5761221614</b></li>
+                                        <li class="flex justify-between"><span>Check-in:</span> <b class="text-white">17:00 - 20:00</b></li>
+                                        <li class="flex justify-between"><span>Apartment:</span> <b class="text-white">Superior Apartment</b></li>
+                                        <li class="text-red-400 font-bold border-t border-slate-700 pt-2 mt-1 flex items-start gap-1.5"><i class="fa-solid fa-money-bill-wave mt-0.5"></i> <span>ACHTUNG: 200€ Kaution in BAR bei Ankunft! Wird bei Abreise erstattet.</span></li>
+                                        <li class="flex justify-between border-t border-slate-700 pt-2 mt-1"><span>Endpreis (inkl. 85€ Reinigung):</span> <b class="text-white text-xs">1.053,27 €</b></li>
+                                    </ul>
+                                </div>
+                            </div>
+                            
+                            <!-- Gallery Salento -->
+                            <h4 class="font-bold text-slate-300 text-xs mb-2 flex items-center gap-2"><i class="fa-solid fa-umbrella-beach text-yellow-500"></i> Strände & Ausflüge (Klicks)</h4>
+                            <div class="flex gap-3 overflow-x-auto pb-2 scrollbar-hide snap-x">
+                                <a href="https://maps.google.com/?q=Marina+di+Pescoluse" target="_blank" class="shrink-0 w-36 bg-slate-800 rounded-xl overflow-hidden border border-slate-700 snap-start block hover:border-yellow-500 transition">
+                                    <img src="https://images.unsplash.com/photo-1590059345224-d9ee787e9142?auto=format&fit=crop&w=300&q=80" class="h-24 w-full object-cover opacity-80" onerror="this.src='https://placehold.co/300x200/1e293b/FFF?text=Strand'">
+                                    <div class="p-2"><p class="text-[10px] font-bold text-slate-200">Malediven Italiens</p><p class="text-[9px] text-slate-500 mt-0.5">Spiaggia Libera suchen für Gratis-Sandstrand.</p></div>
+                                </a>
+                                <a href="https://maps.google.com/?q=Punta+della+Suina" target="_blank" class="shrink-0 w-36 bg-slate-800 rounded-xl overflow-hidden border border-slate-700 snap-start block hover:border-yellow-500 transition">
+                                    <img src="https://images.unsplash.com/photo-1590059345224-d9ee787e9142?auto=format&fit=crop&w=300&q=80" class="h-24 w-full object-cover opacity-80" onerror="this.src='https://placehold.co/300x200/1e293b/FFF?text=Strand'">
+                                    <div class="p-2"><p class="text-[10px] font-bold text-slate-200">Punta della Suina</p><p class="text-[9px] text-slate-500 mt-0.5">Wunderschöne Bucht mit Pinienwald.</p></div>
+                                </a>
+                                <a href="https://maps.google.com/?q=Gallipoli+Puglia" target="_blank" class="shrink-0 w-36 bg-slate-800 rounded-xl overflow-hidden border border-slate-700 snap-start block hover:border-yellow-500 transition">
+                                    <img src="https://images.unsplash.com/photo-1590059345224-d9ee787e9142?auto=format&fit=crop&w=300&q=80" class="h-24 w-full object-cover opacity-80" onerror="this.src='https://placehold.co/300x200/1e293b/FFF?text=Gallipoli'">
+                                    <div class="p-2"><p class="text-[10px] font-bold text-slate-200">Gallipoli Altstadt</p><p class="text-[9px] text-slate-500 mt-0.5">Altstadt liegt auf einer Insel. Wunderschön!</p></div>
+                                </a>
+                                <a href="https://maps.google.com/?q=Alberobello" target="_blank" class="shrink-0 w-36 bg-slate-800 rounded-xl overflow-hidden border border-slate-700 snap-start block hover:border-yellow-500 transition">
+                                    <img src="https://images.unsplash.com/photo-1520625447721-a3f2d29525c3?auto=format&fit=crop&w=300&q=80" class="h-24 w-full object-cover opacity-80" onerror="this.src='https://placehold.co/300x200/1e293b/FFF?text=Alberobello'">
+                                    <div class="p-2"><p class="text-[10px] font-bold text-slate-200">Alberobello (Trulli)</p><p class="text-[9px] text-slate-500 mt-0.5">Zipfelmützen-Häuser, wie im Märchen (130km).</p></div>
+                                </a>
+                                <a href="https://maps.google.com/?q=Lecce+Piazza+del+Duomo" target="_blank" class="shrink-0 w-36 bg-slate-800 rounded-xl overflow-hidden border border-slate-700 snap-start block hover:border-yellow-500 transition">
+                                    <img src="https://images.unsplash.com/photo-1627885442111-939db2ff9cdb?auto=format&fit=crop&w=300&q=80" class="h-24 w-full object-cover opacity-80" onerror="this.src='https://placehold.co/300x200/1e293b/FFF?text=Lecce'">
+                                    <div class="p-2"><p class="text-[10px] font-bold text-slate-200">Lecce Altstadt</p><p class="text-[9px] text-slate-500 mt-0.5">Das Florenz des Südens! Wahnsinns-Barock (60km).</p></div>
+                                </a>
+                                <a href="https://maps.google.com/?q=Otranto" target="_blank" class="shrink-0 w-36 bg-slate-800 rounded-xl overflow-hidden border border-slate-700 snap-start block hover:border-yellow-500 transition">
+                                    <img src="https://images.unsplash.com/photo-1590059345224-d9ee787e9142?auto=format&fit=crop&w=300&q=80" class="h-24 w-full object-cover opacity-80" onerror="this.src='https://placehold.co/300x200/1e293b/FFF?text=Otranto'">
+                                    <div class="p-2"><p class="text-[10px] font-bold text-slate-200">Otranto</p><p class="text-[9px] text-slate-500 mt-0.5">Weisse Stadt am türkisblauen Meer.</p></div>
+                                </a>
+                                <a href="https://maps.google.com/?q=Grotta+della+Zinzulusa" target="_blank" class="shrink-0 w-36 bg-slate-800 rounded-xl overflow-hidden border border-slate-700 snap-start block hover:border-yellow-500 transition">
+                                    <img src="https://images.unsplash.com/photo-1518182170546-076616fdfaaf?auto=format&fit=crop&w=300&q=80" class="h-24 w-full object-cover opacity-80" onerror="this.src='https://placehold.co/300x200/1e293b/FFF?text=Grotta'">
+                                    <div class="p-2"><p class="text-[10px] font-bold text-slate-200">Grotta Zinzulusa</p><p class="text-[9px] text-slate-500 mt-0.5">Riesige Tropfsteinhöhle direkt am Meer (40km).</p></div>
+                                </a>
+                                <a href="https://maps.google.com/?q=Grotta+della+Poesia" target="_blank" class="shrink-0 w-36 bg-slate-800 rounded-xl overflow-hidden border border-slate-700 snap-start block hover:border-yellow-500 transition">
+                                    <img src="https://images.unsplash.com/photo-1590059345224-d9ee787e9142?auto=format&fit=crop&w=300&q=80" class="h-24 w-full object-cover opacity-80" onerror="this.src='https://placehold.co/300x200/1e293b/FFF?text=Poesia'">
+                                    <div class="p-2"><p class="text-[10px] font-bold text-slate-200">Grotta della Poesia</p><p class="text-[9px] text-slate-500 mt-0.5">Einer der schönsten Natur-Pools der Welt.</p></div>
+                                </a>
+                                <a href="https://maps.google.com/?q=Santa+Maria+di+Leuca" target="_blank" class="shrink-0 w-36 bg-slate-800 rounded-xl overflow-hidden border border-slate-700 snap-start block hover:border-yellow-500 transition">
+                                    <img src="https://images.unsplash.com/photo-1518182170546-076616fdfaaf?auto=format&fit=crop&w=300&q=80" class="h-24 w-full object-cover opacity-80" onerror="this.src='https://placehold.co/300x200/1e293b/FFF?text=Leuca'">
+                                    <div class="p-2"><p class="text-[10px] font-bold text-slate-200">S. Maria di Leuca</p><p class="text-[9px] text-slate-500 mt-0.5">Der Absatz des Stiefels! Hier treffen 2 Meere aufeinander.</p></div>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- STOP 4: LAMON -->
+                    <div class="timeline-card glass-card rounded-3xl overflow-hidden">
+                        <span class="absolute -left-[40px] top-5 h-6 w-6 rounded-full bg-green-500 ring-[5px] ring-[#0B1121] flex items-center justify-center shadow-[0_0_15px_rgba(34,197,94,0.6)]"><span class="h-2.5 w-2.5 bg-white rounded-full"></span></span>
+                        <div class="h-32 relative bg-slate-800">
+                            <img src="https://images.unsplash.com/photo-1520625447721-a3f2d29525c3?auto=format&fit=crop&w=600&q=80" onerror="this.src='https://placehold.co/600x400/15803d/FFF?text=Lamon'" class="w-full h-full object-cover opacity-80">
+                            <div class="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-transparent"></div>
+                            <div class="absolute bottom-0 left-0 w-full p-4">
+                                <span class="text-[9px] font-bold text-white uppercase tracking-widest bg-green-600/80 px-2.5 py-1 rounded-lg backdrop-blur-md shadow-sm">21. - 23. Juli • 2 Nächte</span>
+                                <h3 class="font-heading font-extrabold text-white text-xl mt-1.5 text-glow">4. Lamon (Nonna)</h3>
+                            </div>
+                        </div>
+                        <div class="p-4">
+                            <div class="bg-slate-800 rounded-xl p-3 border border-slate-700 text-white shadow-md mb-4">
+                                <h4 class="font-bold text-white text-xs flex items-center gap-1 mb-2"><i class="fa-solid fa-triangle-exclamation text-red-400"></i> Die Mammut-Etappe (950km)</h4>
+                                <p class="text-[11px] text-slate-300 leading-snug"><b>Tipp: Startet um 04:00 Uhr morgens!</b> Die Kids können im Proace Verso weiterschlafen, ihr entgeht der Hitze & dem Stau an der Adriaküste.</p>
+                            </div>
+                            
+                            <h4 class="font-bold text-slate-300 text-xs mb-2 flex items-center gap-2"><i class="fa-solid fa-mountain text-green-500"></i> Bergluft & Natur (Klicks)</h4>
+                            <div class="flex gap-3 overflow-x-auto pb-2 scrollbar-hide snap-x">
+                                <a href="https://maps.google.com/?q=Cascate+del+Salton" target="_blank" class="shrink-0 w-36 bg-slate-800 rounded-xl overflow-hidden border border-slate-700 snap-start block hover:border-green-500 transition">
+                                    <img src="https://images.unsplash.com/photo-1520625447721-a3f2d29525c3?auto=format&fit=crop&w=300&q=80" class="h-24 w-full object-cover opacity-80" onerror="this.src='https://placehold.co/300x200/1e293b/FFF?text=Wasserfall'">
+                                    <div class="p-2"><p class="text-[10px] font-bold text-slate-200">Cascate del Salton</p><p class="text-[9px] text-slate-500 mt-0.5">Versteckter, wilder Wasserfall im Wald.</p></div>
+                                </a>
+                                <a href="https://maps.google.com/?q=Ponte+Tibetana+Val+Fell" target="_blank" class="shrink-0 w-36 bg-slate-800 rounded-xl overflow-hidden border border-slate-700 snap-start block hover:border-green-500 transition">
+                                    <img src="https://images.unsplash.com/photo-1520625447721-a3f2d29525c3?auto=format&fit=crop&w=300&q=80" class="h-24 w-full object-cover opacity-80" onerror="this.src='https://placehold.co/300x200/1e293b/FFF?text=Brücke'">
+                                    <div class="p-2"><p class="text-[10px] font-bold text-slate-200">Ponte Tibetano</p><p class="text-[9px] text-slate-500 mt-0.5">Spannende Hängebrücke für mutige Kids.</p></div>
+                                </a>
+                                <a href="https://maps.google.com/?q=Lago+di+Corlo+Arsie" target="_blank" class="shrink-0 w-36 bg-slate-800 rounded-xl overflow-hidden border border-slate-700 snap-start block hover:border-green-500 transition">
+                                    <img src="https://images.unsplash.com/photo-1520625447721-a3f2d29525c3?auto=format&fit=crop&w=300&q=80" class="h-24 w-full object-cover opacity-80" onerror="this.src='https://placehold.co/300x200/1e293b/FFF?text=Corlo'">
+                                    <div class="p-2"><p class="text-[10px] font-bold text-slate-200">Lago di Corlo</p><p class="text-[9px] text-slate-500 mt-0.5">Wunderschöner Fjord-artiger Bergsee bei Arsiè.</p></div>
+                                </a>
+                                <a href="https://maps.google.com/?q=Birreria+Pedavena" target="_blank" class="shrink-0 w-36 bg-slate-800 rounded-xl overflow-hidden border border-slate-700 snap-start block hover:border-green-500 transition">
+                                    <img src="https://images.unsplash.com/photo-1563503254924-f7b572242137?auto=format&fit=crop&w=300&q=80" class="h-24 w-full object-cover opacity-80" onerror="this.src='https://placehold.co/300x200/1e293b/FFF?text=Pedavena'">
+                                    <div class="p-2"><p class="text-[10px] font-bold text-slate-200">Birreria Pedavena</p><p class="text-[9px] text-slate-500 mt-0.5">Italiens grösste Brauerei mit riesigem Park für Kids.</p></div>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAGEBUCH -->
+            <div class="glass-card rounded-3xl p-5 mb-8 relative overflow-hidden">
+                <h3 class="font-heading font-extrabold text-white text-xl mb-3 text-glow">Reise-Tagebuch 📔</h3>
+                <div class="bg-slate-900/50 p-3 rounded-2xl border border-slate-700 mb-4 shadow-inner">
+                    <textarea id="diary-text" class="w-full bg-transparent outline-none text-sm text-slate-200 font-medium resize-none placeholder-slate-500" rows="3" placeholder="Was war das Highlight heute?"></textarea>
+                    <div class="flex justify-end mt-2">
+                        <button onclick="app.saveDiary()" class="bg-blue-600 hover:bg-blue-500 transition text-white text-xs font-bold px-4 py-2 rounded-xl shadow-lg border border-blue-400">Eintrag speichern</button>
+                    </div>
+                </div>
+                <div id="diary-feed" class="space-y-3 max-h-60 overflow-y-auto scrollbar-hide text-sm"></div>
+            </div>
+        </section>
+
+        <!-- ==================== TAB: ORGA ==================== -->
+        <section id="tab-orga" class="tab-content hidden px-4 pt-4">
+            
+            <div class="flex gap-3 mb-6">
+                <div class="glass-card rounded-3xl p-4 flex-1">
+                    <h3 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2"><i class="fa-solid fa-coins text-blue-400"></i> Umrechner</h3>
+                    <div class="flex items-center gap-2">
+                        <div class="flex-1"><input type="number" id="eur-input" oninput="app.calcCurrency('eur')" class="w-full bg-slate-900/50 border border-slate-700 rounded-xl p-2 text-sm font-extrabold text-blue-300 outline-none text-center" placeholder="€ EUR"></div>
+                        <i class="fa-solid fa-arrow-right-arrow-left text-slate-500 text-xs"></i>
+                        <div class="flex-1"><input type="number" id="chf-input" oninput="app.calcCurrency('chf')" class="w-full bg-slate-900/50 border border-slate-700 rounded-xl p-2 text-sm font-extrabold text-red-400 outline-none text-center" placeholder="CHF"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TANK & BUDGET TRACKER -->
+            <div class="glass-card rounded-3xl p-5 mb-8 relative">
+                <div class="flex justify-between items-center mb-3">
+                    <span class="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Urlaubsbudget</span>
+                    <span class="text-lg font-extrabold text-white tracking-tight text-glow" id="budget-left">3000 € übrig</span>
+                </div>
+                <div class="w-full bg-slate-900 rounded-full h-3 mb-4 border border-slate-700 shadow-inner">
+                    <div id="budget-bar-remaining" class="bg-gradient-to-r from-emerald-400 to-emerald-500 h-3 rounded-full transition-all duration-700" style="width: 100%"></div>
+                </div>
+                
+                <div class="flex gap-2 mt-5 bg-slate-900/50 p-2 rounded-2xl border border-slate-700 shadow-inner">
+                    <select id="exp-cat" class="bg-slate-800 border border-slate-600 text-slate-200 text-[11px] font-bold rounded-xl p-2 outline-none">
+                        <option value="🍕 Essen">🍕 Essen</option><option value="⛽ Diesel">⛽ Diesel</option><option value="🎫 Maut">🎫 Maut</option><option value="🛒 Supermarkt">🛒 Supermarkt</option><option value="🍦 Gelato">🍦 Gelato</option>
+                    </select>
+                    <input type="number" id="exp-amt" placeholder="€" class="flex-1 bg-slate-800 border border-slate-600 text-white font-extrabold text-sm rounded-xl p-2 outline-none">
+                    <button onclick="app.addExpense()" class="bg-blue-600 hover:bg-blue-500 transition text-white font-bold w-12 rounded-xl flex items-center justify-center border border-blue-400 shadow-md"><i class="fa-solid fa-plus"></i></button>
+                </div>
+                <div id="expense-list" class="mt-4 space-y-2 max-h-40 overflow-y-auto scrollbar-hide text-xs"></div>
+                <div class="text-right mt-3"><button onclick="app.showConfirmModal('Kasse leeren?', 'Möchtest du wirklich alle Ausgaben löschen?', function() { app.clearExpenses(); })" class="text-[10px] text-slate-500 bg-slate-900/50 px-3 py-1.5 rounded-lg border border-slate-800 hover:bg-slate-800 transition">Kasse leeren</button></div>
+            </div>
+
+            <!-- TRESOR -->
+            <div class="glass-card rounded-3xl p-5 mb-8">
+                <h3 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2"><i class="fa-solid fa-vault text-blue-400"></i> Familien-Tresor</h3>
+                <div class="flex gap-2 mb-3">
+                    <input type="password" id="vault-pin" placeholder="PIN eingeben (0000)" class="w-full bg-slate-900/50 border border-slate-700 rounded-xl p-2 text-sm font-extrabold text-center tracking-widest text-slate-200 outline-none">
+                    <button onclick="app.unlockVault()" class="bg-indigo-600 hover:bg-indigo-500 transition text-white font-bold px-4 rounded-xl border border-indigo-400 shadow-md"><i class="fa-solid fa-unlock"></i></button>
+                </div>
+                <div id="vault-content" class="hidden bg-slate-900/80 rounded-xl p-3 border border-slate-700 shadow-inner">
+                    <textarea id="vault-text" class="w-full h-24 bg-transparent outline-none resize-none text-xs text-slate-300" placeholder="Sensible Notizen hier eintragen..."></textarea>
+                    <div class="text-right mt-2"><button onclick="app.saveVault()" class="bg-blue-600 hover:bg-blue-500 transition text-white text-[10px] font-bold px-3 py-1.5 rounded-lg border border-blue-400">Speichern & Lock</button></div>
+                </div>
+            </div>
+
+            <!-- LADE-STRATEGIE -->
+            <div class="bg-gradient-to-r from-slate-900 via-slate-800 to-blue-950 rounded-3xl p-5 shadow-lg mb-6 border border-blue-900/50">
+                <h3 class="font-bold text-white mb-3 pb-2 border-b border-slate-700 flex items-center justify-between">
+                    <span><i class="fa-solid fa-truck-ramp-box text-blue-400"></i> Proace Verso Lade-Strategie</span>
+                </h3>
+                <div class="text-[11px] space-y-2 text-slate-300 mt-2 leading-relaxed">
+                    <p><i class="fa-solid fa-layer-group text-blue-400 mr-1 w-4"></i> <b>Koffer Apulien:</b> Die grossen/schweren Koffer GANZ UNTEN und ganz hinten platzieren.</p>
+                    <p><i class="fa-solid fa-suitcase text-yellow-400 mr-1 w-4"></i> <b>"1-Nacht-Tasche":</b> Packt eine separate Tasche NUR für Orvieto. Legt sie als ALLERLETZTES GANZ OBEN auf! So bleiben die Koffer im Auto.</p>
+                    <p><i class="fa-solid fa-temperature-arrow-down text-cyan-400 mr-1 w-4"></i> <b>Kühlakkus:</b> Frisch aus dem Eisfach holen und in die Box hinter den Fahrersitz klemmen.</p>
+                </div>
+            </div>
+
+            <!-- MEGA CHECKLIST -->
+            <div class="flex justify-between items-end mb-4">
+                <h2 class="font-heading text-2xl font-extrabold text-white text-glow">Master-Packliste</h2>
+                <p class="text-[11px] font-extrabold text-blue-400 bg-blue-900/30 px-3 py-1 rounded-full border border-blue-800" id="progress-text">0/130 gepackt</p>
+            </div>
+            <div class="w-full bg-slate-800 rounded-full h-2.5 mb-6 shadow-inner"><div id="progress-bar" class="bg-gradient-to-r from-blue-500 to-indigo-500 h-2.5 rounded-full transition-all duration-700 shadow-[0_0_10px_rgba(59,130,246,0.6)]" style="width: 0%"></div></div>
+
+            <div class="mb-4 flex gap-2">
+                <button onclick="app.expandAllChecklist()" class="flex-1 glass-card text-slate-300 text-[10px] font-bold py-2 rounded-xl hover:bg-slate-700 transition"><i class="fa-solid fa-folder-open mr-1"></i> Alle öffnen</button>
+                <button onclick="app.showConfirmModal('Packliste Reset', 'Möchtest du die gesamte Liste zurücksetzen?', function(){ app.resetChecklist(); })" class="flex-[0.5] bg-red-950/50 border border-red-900/50 text-red-400 text-[10px] font-bold py-2 rounded-xl hover:bg-red-900/50 transition"><i class="fa-solid fa-rotate-right"></i> Reset</button>
+            </div>
+
+            <div id="checklist-container" class="space-y-3 pb-8"></div>
+        </section>
+
+        <!-- ==================== TAB: HACKS ==================== -->
+        <section id="tab-hacks" class="tab-content hidden px-4 pt-4">
+            <h2 class="font-heading text-2xl font-extrabold text-white text-glow mb-6">Survival Hacks</h2>
+            <div class="space-y-5 pb-8">
+                
+                <!-- TRINKGELD RECHNER -->
+                <div class="glass-card rounded-3xl overflow-hidden">
+                    <div class="bg-gradient-to-r from-emerald-600 to-teal-600 px-5 py-3.5 text-white flex items-center gap-3 border-b border-emerald-500/50">
+                        <i class="fa-solid fa-coins text-2xl"></i><h3 class="font-extrabold text-sm tracking-wide">Mancia (Trinkgeld) Rechner</h3>
+                    </div>
+                    <div class="p-5 bg-slate-900/30">
+                        <p class="text-[10px] text-slate-400 mb-3">Steht "Coperto" (Gedeck) auf der Rechnung, ist Brot/Besteck bezahlt. Bei Top-Service gibt man dennoch etwas (5-10%).</p>
+                        <input type="number" id="bill-amount" placeholder="Rechnungsbetrag €" class="w-full mb-4 bg-slate-800 border border-slate-700 rounded-xl px-3 py-2.5 text-sm font-bold outline-none text-white text-center focus:border-emerald-500 transition">
+                        <div class="flex gap-2 mb-4">
+                            <button onclick="app.calcTip(0.05)" class="flex-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-xs py-2 rounded-xl transition">Ok (5%)</button>
+                            <button onclick="app.calcTip(0.10)" class="flex-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-xs py-2 rounded-xl transition">Super (10%)</button>
+                            <button onclick="app.calcTip(0.15)" class="flex-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-xs py-2 rounded-xl transition">Wow (15%)</button>
+                        </div>
+                        <p id="tip-result" class="font-mono text-2xl font-extrabold text-emerald-400 text-center">0.00 €</p>
+                    </div>
+                </div>
+
+                <div class="glass-card rounded-3xl p-4 border-l-4 border-slate-400">
+                    <h4 class="font-bold text-white text-sm mb-1">Sistema Tutor (Die Blitzer-Falle)</h4>
+                    <p class="text-[11px] text-slate-300">Auf der Autostrada gibt es fast keine normalen Blitzer. Das "Sistema Tutor" misst die <b>Durchschnittsgeschwindigkeit</b> zwischen zwei Brücken (oft 20-30km lang). Tempomat auf 135 km/h und entspannen!</p>
+                </div>
+                <div class="glass-card rounded-3xl p-4 border-l-4 border-slate-400">
+                    <h4 class="font-bold text-white text-sm mb-1">Tanken: Fai da te vs. Servito</h4>
+                    <p class="text-[11px] text-slate-300">Fahrt in Städten immer an Säulen mit <b>"Fai da te" / "Self"</b> (Selbstbedienung). Wenn ihr an "Servito" fahrt und der Tankwart tankt, zahlt ihr oft 20-30 Cent <b>MEHR pro Liter</b>!</p>
+                </div>
+                <div class="glass-card rounded-3xl p-4 border-l-4 border-slate-400">
+                    <h4 class="font-bold text-white text-sm mb-1">Die Autogrill-Brücken (A1)</h4>
+                    <p class="text-[11px] text-slate-300">Haltet nicht an winzigen "Area di Servizio". Sucht die grossen Brücken-Raststätten (wie <b>Secchia Ovest</b> oder <b>Cantagallo</b>). Man isst dort buchstäblich <i>über</i> der Autobahn – die Kids lieben es!</p>
+                </div>
+                <div class="glass-card rounded-3xl p-4 border-l-4 border-slate-400">
+                    <h4 class="font-bold text-white text-sm mb-1">Steckdosen & Strom (Typ L)</h4>
+                    <p class="text-[11px] text-slate-300">Die flachen Schweizer Stecker (Eurostecker) passen in Italien. Für die grossen, dicken 3-Pol-Stecker braucht ihr aber einen Adapter (Typ L)! Checkt eure Laptop-Ladekabel.</p>
+                </div>
+                <div class="glass-card rounded-3xl p-4 border-l-4 border-slate-400">
+                    <h4 class="font-bold text-white text-sm mb-1">Bargeld vs. Karte & Coperto</h4>
+                    <p class="text-[11px] text-slate-300">Kartenzahlung (auch Apple Pay) ist mittlerweile fast überall Pflicht und möglich (sogar für 1€ Kaffee). <b>Trinkgeld</b> gibt man in Italien nur, wenn der Service aussergewöhnlich war (wegen dem "Coperto"), dann aber immer in bar auf den Tisch legen.</p>
+                </div>
+
+                <div class="glass-card rounded-3xl p-4 border-l-4 border-cyan-500">
+                    <h4 class="font-bold text-white text-sm mb-1 flex items-center gap-2"><i class="fa-solid fa-compass text-cyan-500"></i> Apulien Wind-Kompass</h4>
+                    <ul class="text-[11px] text-slate-300 space-y-1 mt-2">
+                        <li><b>Scirocco (Heisser Südwind):</b> Fahrt an die Ionische Küste (Pescoluse). Das Wasser ist dann glatt wie ein Spiegel.</li>
+                        <li><b>Tramontana (Nordwind):</b> Fahrt an die Adriaküste (Otranto). So habt ihr keine Wellen!</li>
+                    </ul>
+                </div>
+
+                <div class="glass-card rounded-3xl p-4 border-l-4 border-orange-500">
+                    <h4 class="font-bold text-white text-sm mb-1 flex items-center gap-2"><i class="fa-solid fa-hand text-orange-500"></i> Handgesten-Guide</h4>
+                    <ul class="text-[11px] text-slate-300 space-y-1 mt-2">
+                        <li><b>Fingerspitzen zusammen nach oben ("Che vuoi?"):</b> "Was willst du eigentlich?" (Oft humorvoll).</li>
+                        <li><b>Zeigefinger bohrt in Wange:</b> "Das Essen ist extrem lecker!" (Perfekt für die Kids).</li>
+                        <li><b>Handkante unters Kinn streichen:</b> "Ist mir völlig egal."</li>
+                    </ul>
+                </div>
+
+                <div class="glass-card rounded-3xl p-4 border-l-4 border-pink-500">
+                    <h4 class="font-bold text-white text-sm mb-1 flex items-center gap-2"><i class="fa-solid fa-ice-cream text-pink-500"></i> Gelato-Lexikon</h4>
+                    <ul class="text-[11px] text-slate-300 space-y-1 mt-2">
+                        <li><b>Puffo:</b> Schlumpf-Eis (blau, Kaugummi-Geschmack)</li>
+                        <li><b>Bacio:</b> Schoko-Haselnuss (wie die Praline)</li>
+                        <li><b>Fior di Latte:</b> Reines Milcheis (ohne Vanille!)</li>
+                        <li><b>Stracciatella:</b> Fior di Latte mit Schokosplittern</li>
+                        <li><b>Con panna?:</b> "Mit Sahne oben drauf?"</li>
+                    </ul>
+                </div>
+
+                <div class="glass-card rounded-3xl p-4 border-l-4 border-amber-600">
+                    <h4 class="font-bold text-white text-sm mb-1 flex items-center gap-2"><i class="fa-solid fa-mug-hot text-amber-600"></i> Die Kaffee-Gesetze</h4>
+                    <ul class="text-[11px] text-slate-300 space-y-1 mt-2">
+                        <li><b>Cappuccino:</b> Trinkt man in Italien <i>niemals</i> nach 11 Uhr morgens!</li>
+                        <li><b>Un Caffè:</b> Das ist ein normaler Espresso.</li>
+                        <li><b>Al Banco vs. Al Tavolo:</b> Kaffee im Stehen an der Bar (Al Banco) kostet oft nur 1-2€. Am Tisch serviert (Al Tavolo) oft das Doppelte!</li>
+                    </ul>
+                </div>
+
+                <div class="glass-card rounded-3xl p-4 border-l-4 border-green-500">
+                    <h4 class="font-bold text-white text-sm mb-1 flex items-center gap-2"><i class="fa-solid fa-basket-shopping text-green-500"></i> Supermarkt & Müll (WICHTIG!)</h4>
+                    <ul class="text-[11px] text-slate-300 space-y-1 mt-2">
+                        <li><b>Obst & Gemüse:</b> IMMER den Plastikhandschuh anziehen, bevor ihr etwas anfasst! Sonst gibt es Ärger.</li>
+                        <li><b>Raccolta Differenziata:</b> Mülltrennung ist in Italien extrem streng. Organico (Bio), Plastica, Carta (Papier), Vetro (Glas), Secco (Restmüll). Falsch getrennt = Strafe für den Vermieter!</li>
+                    </ul>
+                </div>
+
+                <div class="glass-card rounded-3xl p-4 border-l-4 border-purple-500">
+                    <h4 class="font-bold text-white text-sm mb-1 flex items-center gap-2"><i class="fa-solid fa-fish-fins text-purple-500"></i> Quallen & Pausa Pranzo</h4>
+                    <ul class="text-[11px] text-slate-300 space-y-1 mt-2">
+                        <li><b>Feuerqualle (Medusa):</b> Niemals mit Süßwasser abwaschen! Nur mit Salzwasser spülen, dann Rasierschaum oder Essig drauf.</li>
+                        <li><b>Pausa Pranzo (Siesta):</b> Im Süden machen zwischen 13:00 und 16:30 Uhr fast alle kleinen Läden dicht!</li>
+                    </ul>
+                </div>
+
+                <div class="glass-card rounded-3xl p-4 border-l-4 border-red-500">
+                    <h4 class="font-bold text-white text-sm mb-1">ZTL-Zonen (Rom)</h4>
+                    <p class="text-[11px] text-slate-300">Roter Kreis auf Schild = Zona a Traffico Limitato. Reinfahren wird gefilmt und kostet 100€+ Strafe!</p>
+                </div>
+                <div class="glass-card rounded-3xl p-4 border-l-4 border-blue-500">
+                    <h4 class="font-bold text-white text-sm mb-1">Nasoni (Gratis Wasser)</h4>
+                    <p class="text-[11px] text-slate-300">Roms Gusseisen-Brunnen. Loch unten zuhalten, dann sprudelt es oben wie aus einem Trinkbrunnen. Perfektes Trinkwasser!</p>
+                </div>
+                <div class="glass-card rounded-3xl p-4 border-l-4 border-yellow-500">
+                    <h4 class="font-bold text-white text-sm mb-1">Maut1.de Box (VIP)</h4>
+                    <p class="text-[11px] text-slate-300">Fahrt NUR auf die GELBEN Spuren (Telepass). Box an der Scheibe piept = Durchfahren. Nicht bremsen!</p>
+                </div>
+                <div class="glass-card rounded-3xl p-4 border-l-4 border-slate-400">
+                    <h4 class="font-bold text-white text-sm mb-1">Autogrill Toiletten-Hack</h4>
+                    <p class="text-[11px] text-slate-300">Lasst euch nicht von der Schlange oben täuschen. Die grossen, sauberen Toiletten sind fast immer im Untergeschoss!</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== TAB: SPIELE ==================== -->
+        <section id="tab-spiele" class="tab-content hidden px-4 pt-4 pb-10 relative">
+            
+            <!-- DAILY QUEST -->
+            <div class="glass-card rounded-2xl p-4 mb-4 border border-amber-500/50 shadow-[0_0_15px_rgba(245,158,11,0.2)]">
+                <h3 class="text-amber-400 font-extrabold text-sm flex items-center gap-2 mb-1"><i class="fa-solid fa-star"></i> Tages-Mission</h3>
+                <p class="text-[11px] text-white" id="daily-quest-text">Lade die Mission...</p>
+                <button onclick="app.completeQuest(this)" class="mt-2 text-[10px] bg-amber-500 hover:bg-amber-400 text-slate-900 font-bold px-3 py-1.5 rounded-lg transition shadow-md">Mission erfüllt (+50 XP)</button>
+            </div>
+
+            <div class="flex gap-2 overflow-x-auto pb-4 scrollbar-hide snap-x mb-2">
+                <button onclick="app.showGame('game-gelato', this)" class="game-btn active-game snap-start shrink-0 px-4 py-2 rounded-2xl bg-slate-800 border border-slate-700 text-slate-300 font-bold text-[11px] transition">🍦 Gelato-Zähler</button>
+                <button onclick="app.showGame('game-briscola', this)" class="game-btn snap-start shrink-0 px-4 py-2 rounded-2xl bg-slate-800 border border-slate-700 text-slate-300 font-bold text-[11px] transition">🃏 Briscola</button>
+                <button onclick="app.showGame('game-bingo', this)" class="game-btn snap-start shrink-0 px-4 py-2 rounded-2xl bg-slate-800 border border-slate-700 text-slate-300 font-bold text-[11px] transition">🚓 Auto-Bingo</button>
+                <button onclick="app.showGame('game-tricolore', this)" class="game-btn snap-start shrink-0 px-4 py-2 rounded-2xl bg-slate-800 border border-slate-700 text-slate-300 font-bold text-[11px] transition">🇮🇹 Tricolore</button>
+                <button onclick="app.showGame('game-quiz', this)" class="game-btn snap-start shrink-0 px-4 py-2 rounded-2xl bg-slate-800 border border-slate-700 text-slate-300 font-bold text-[11px] transition">🧠 Quiz</button>
+                <button onclick="app.showGame('game-chisono', this)" class="game-btn snap-start shrink-0 px-4 py-2 rounded-2xl bg-slate-800 border border-slate-700 text-slate-300 font-bold text-[11px] transition">🎭 Wer bin ich?</button>
+                <button onclick="app.showGame('game-draw', this)" class="game-btn snap-start shrink-0 px-4 py-2 rounded-2xl bg-slate-800 border border-slate-700 text-slate-300 font-bold text-[11px] transition">🎨 Mal-Ecke</button>
+                <button onclick="app.showGame('game-safari', this)" class="game-btn snap-start shrink-0 px-4 py-2 rounded-2xl bg-slate-800 border border-slate-700 text-slate-300 font-bold text-[11px] transition">📸 Safari</button>
+                <button onclick="app.showGame('game-roulette', this)" class="game-btn snap-start shrink-0 px-4 py-2 rounded-2xl bg-slate-800 border border-slate-700 text-slate-300 font-bold text-[11px] transition">🎰 Eis-Roulette</button>
+                <button onclick="app.showGame('game-targa', this)" class="game-btn snap-start shrink-0 px-4 py-2 rounded-2xl bg-slate-800 border border-slate-700 text-slate-300 font-bold text-[11px] transition">🚗 Targa</button>
+                <button onclick="app.showGame('game-soundboard', this)" class="game-btn snap-start shrink-0 px-4 py-2 rounded-2xl bg-slate-800 border border-slate-700 text-slate-300 font-bold text-[11px] transition">🔊 Sounds</button>
+                <button onclick="app.showGame('game-kartenregeln', this)" class="game-btn snap-start shrink-0 px-4 py-2 rounded-2xl bg-slate-800 border border-slate-700 text-slate-300 font-bold text-[11px] transition">📖 Regeln</button>
+            </div>
+
+            <!-- GELATO TRACKER -->
+            <div id="game-gelato" class="game-view block">
+                <div class="glass-card rounded-3xl p-4">
+                    <h3 class="font-heading font-extrabold text-white text-lg mb-2 text-glow">Wer isst am meisten Eis? 🍦</h3>
+                    <p class="text-[10px] text-slate-300 mb-4">Trackt euren Gelato-Konsum über die ganze Reise!</p>
+                    <div class="space-y-3" id="gelato-list"></div>
+                    <button onclick="app.showConfirmModal('Gelato Reset', 'Möchtest du alle Eis-Zähler auf 0 setzen?', function(){ app.resetGelato(); })" class="mt-4 w-full bg-slate-700 hover:bg-slate-600 text-white font-bold py-2.5 rounded-xl transition text-xs border border-slate-600"><i class="fa-solid fa-rotate-right mr-1"></i> Zähler Reset</button>
+                </div>
+            </div>
+
+            <!-- AUTO BINGO -->
+            <div id="game-bingo" class="game-view hidden">
+                <div class="glass-card rounded-3xl p-4">
+                    <h3 class="font-heading font-extrabold text-white text-lg mb-4 text-glow">Auto-Bingo 🚓</h3>
+                    <p class="text-[10px] text-slate-300 mb-4">Wer zuerst alle entdeckt, bekommt ein Gelato!</p>
+                    <div class="grid grid-cols-3 gap-2" id="bingo-grid"></div>
+                    <button onclick="app.showConfirmModal('Bingo Reset', 'Willst du das Spielfeld löschen?', function(){ app.resetBingo(); })" class="mt-4 w-full bg-slate-700 hover:bg-slate-600 text-white font-bold py-2.5 rounded-xl transition text-xs border border-slate-600"><i class="fa-solid fa-rotate-right mr-1"></i> Bingo Reset</button>
+                </div>
+            </div>
+
+            <!-- TRICOLORE -->
+            <div id="game-tricolore" class="game-view hidden">
+                <div class="glass-card rounded-3xl p-5 text-center">
+                    <h3 class="font-heading font-extrabold text-white text-lg mb-2 text-glow">Tricolore Zähler 🇮🇹</h3>
+                    <p class="text-[10px] text-slate-300 mb-6">Sammelt 10 Autos pro Farbe für die Italien-Flagge!</p>
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between bg-green-900/40 p-3 rounded-2xl border border-green-500/50">
+                            <div class="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center text-white shadow-md"><i class="fa-solid fa-car"></i></div>
+                            <span class="font-mono font-extrabold text-green-400 text-2xl" id="count-green">0</span>
+                            <button onclick="app.updateTricolore('green')" class="w-12 h-12 rounded-full bg-green-600 hover:bg-green-500 text-white font-bold shadow-lg"><i class="fa-solid fa-plus"></i></button>
+                        </div>
+                        <div class="flex items-center justify-between bg-slate-800 p-3 rounded-2xl border border-slate-500/50">
+                            <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center text-slate-800 shadow-md"><i class="fa-solid fa-car"></i></div>
+                            <span class="font-mono font-extrabold text-white text-2xl" id="count-white">0</span>
+                            <button onclick="app.updateTricolore('white')" class="w-12 h-12 rounded-full bg-slate-200 hover:bg-white text-slate-800 font-bold shadow-lg"><i class="fa-solid fa-plus"></i></button>
+                        </div>
+                        <div class="flex items-center justify-between bg-red-900/40 p-3 rounded-2xl border border-red-500/50">
+                            <div class="w-10 h-10 bg-red-500 rounded-full flex items-center justify-center text-white shadow-md"><i class="fa-solid fa-car"></i></div>
+                            <span class="font-mono font-extrabold text-red-400 text-2xl" id="count-red">0</span>
+                            <button onclick="app.updateTricolore('red')" class="w-12 h-12 rounded-full bg-red-600 hover:bg-red-500 text-white font-bold shadow-lg"><i class="fa-solid fa-plus"></i></button>
+                        </div>
+                    </div>
+                    <button onclick="app.showConfirmModal('Zähler Reset', 'Willst du die Zähler auf 0 setzen?', function(){ app.resetTricolore(); })" class="mt-6 text-[10px] text-slate-500 bg-slate-900/50 px-4 py-2 rounded-lg border border-slate-800 transition hover:bg-slate-800">Reset Zähler</button>
+                </div>
+            </div>
+
+            <!-- KARTEN REGELN -->
+            <div id="game-kartenregeln" class="game-view hidden">
+                <div class="glass-card rounded-3xl p-5">
+                    <h3 class="font-heading font-extrabold text-white text-lg mb-4 text-glow">Kartentisch Regeln 📖</h3>
+                    
+                    <button onclick="app.toggleAccordion('acc-scopa', this)" class="w-full bg-slate-800 border border-slate-700 p-3 rounded-t-2xl flex justify-between items-center text-xs font-bold text-white transition hover:bg-slate-700">
+                        <span>Scopa</span><i class="fa-solid fa-chevron-down text-slate-400"></i>
+                    </button>
+                    <div id="acc-scopa" class="hidden bg-slate-900/80 p-3 border-x border-slate-700 text-[11px] text-slate-300 leading-relaxed shadow-inner">
+                        Jeder bekommt 3 Karten, 4 offen auf den Tisch. Ziel: Karten auf dem Tisch "abräumen" (Scopa = Besen), indem die eigene Karte den gleichen Wert hat wie eine Karte (oder die Summe mehrerer) auf dem Tisch. Punkte für: meiste Karten, meiste Münzen (Denari), die Sieben der Münzen (Settebello) und jeden "Scopa" (leerer Tisch).
+                    </div>
+
+                    <button onclick="app.toggleAccordion('acc-briscola-rule', this)" class="w-full bg-slate-800 border border-slate-700 p-3 flex justify-between items-center text-xs font-bold text-white transition hover:bg-slate-700">
+                        <span>Briscola</span><i class="fa-solid fa-chevron-down text-slate-400"></i>
+                    </button>
+                    <div id="acc-briscola-rule" class="hidden bg-slate-900/80 p-3 border-x border-slate-700 text-[11px] text-slate-300 leading-relaxed shadow-inner">
+                        Jeder 3 Karten. Eine Karte wird aufgedeckt, deren Farbe ist Trumpf (Briscola). Es herrscht KEIN Farbzwang! Werte: As(11), 3(10), Re(4), Cavallo(3), Fante(2). Wer die höchste Karte der gespielten Farbe legt oder trumpft, gewinnt den Stich.
+                    </div>
+
+                    <button onclick="app.toggleAccordion('acc-scala40', this)" class="w-full bg-slate-800 border border-slate-700 p-3 rounded-b-2xl flex justify-between items-center text-xs font-bold text-white transition hover:bg-slate-700">
+                        <span>Scala 40</span><i class="fa-solid fa-chevron-down text-slate-400"></i>
+                    </button>
+                    <div id="acc-scala40" class="hidden bg-slate-900/80 p-3 border border-t-0 border-slate-700 rounded-b-2xl text-[11px] text-slate-300 leading-relaxed shadow-inner">
+                        Gespielt mit 2 Rommé-Blättern inkl. Joker. 13 Karten pro Spieler. Ziel: Karten in Sätzen (z.B. 3 Achter) oder Folgen (z.B. Herz 4,5,6) ablegen. Erstmeldung: mind. 40 Punkte! Wer alles abgelegt hat, gewinnt.
+                    </div>
+                </div>
+            </div>
+
+            <!-- SOUNDBOARD -->
+            <div id="game-soundboard" class="game-view hidden">
+                <div class="glass-card rounded-3xl p-5 text-center">
+                    <h3 class="font-heading font-extrabold text-white text-lg mb-4 text-glow">Soundboard 🔊</h3>
+                    <div class="grid grid-cols-2 gap-3">
+                        <button onclick="app.speak('Mamma mia che caldo!')" class="bg-gradient-to-r from-red-500 to-orange-500 text-white font-bold py-4 rounded-xl shadow-lg active:scale-95 transition text-xs">Mamma Mia!</button>
+                        <button onclick="app.speak('Andiamo ragazzi!')" class="bg-gradient-to-r from-green-500 to-emerald-500 text-white font-bold py-4 rounded-xl shadow-lg active:scale-95 transition text-xs">Andiamo!</button>
+                        <button onclick="app.speak('Che cazzo fai?')" class="bg-gradient-to-r from-blue-500 to-indigo-500 text-white font-bold py-4 rounded-xl shadow-lg active:scale-95 transition text-xs">Che cazzo fai?</button>
+                        <button onclick="app.speak('Voglio un gelato!')" class="bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold py-4 rounded-xl shadow-lg active:scale-95 transition text-xs">Gelato!</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- GAME: BRISCOLA -->
+            <div id="game-briscola" class="game-view hidden">
+                <div class="bg-gradient-to-b from-green-900 to-green-950 rounded-3xl border border-green-700/50 p-4 text-white shadow-2xl relative">
+                    <h3 class="font-heading font-extrabold text-base text-amber-400 mb-5 text-center drop-shadow-md">Briscola vs. Luigi</h3>
+                    
+                    <!-- Bot Hand -->
+                    <div class="flex justify-center gap-3 mb-6 h-[100px]" id="briscola-bot-hand">
+                        <div class="card-trevisane bg-slate-800 border-slate-600 text-transparent">?</div>
+                        <div class="card-trevisane bg-slate-800 border-slate-600 text-transparent">?</div>
+                        <div class="card-trevisane bg-slate-800 border-slate-600 text-transparent">?</div>
+                    </div>
+                    
+                    <!-- Table -->
+                    <div class="bg-green-950/80 rounded-2xl h-[140px] flex items-center justify-center gap-6 mb-6 relative border border-green-800/50 shadow-inner">
+                        <div id="briscola-trump" class="absolute left-3 top-3 text-2xl drop-shadow-md flex flex-col items-center">
+                            <span class="text-[8px] text-amber-300 mb-1">BRISCOLA</span>
+                            <span id="trump-suit-icon">🏆</span>
+                        </div>
+                        <div id="briscola-bot-play" class="card-trevisane bg-slate-800 border-slate-600 text-transparent opacity-50">?</div>
+                        <div id="briscola-player-play" class="card-trevisane bg-slate-800 border-slate-600 text-transparent opacity-50">?</div>
+                    </div>
+                    
+                    <p class="text-[11px] text-amber-300 text-center mb-4 font-bold h-4" id="briscola-message">Drücke auf Start!</p>
+                    
+                    <!-- Player Hand -->
+                    <div class="flex justify-center gap-3 mb-6 h-[100px]" id="briscola-player-hand"></div>
+                    
+                    <!-- START OVERLAY -->
+                    <div class="text-center absolute inset-0 bg-green-950/80 backdrop-blur-sm flex items-center justify-center rounded-3xl z-10" id="briscola-overlay">
+                        <button id="briscola-start-btn" onclick="app.startBriscola()" class="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-green-950 font-black px-8 py-4 rounded-2xl text-lg border-2 border-amber-300 shadow-[0_0_30px_rgba(245,158,11,0.5)] transition transform hover:scale-105 active:scale-95 cursor-pointer">SPIEL STARTEN</button>
+                    </div>
+                    
+                    <div class="text-center text-[10px] font-mono bg-green-900/50 py-2 rounded-xl border border-green-800">Luigi: <span id="briscola-bot-score" class="font-bold text-amber-400 text-xs">0</span> | Du: <span id="briscola-player-score" class="font-bold text-amber-400 text-xs">0</span></div>
+                </div>
+            </div>
+
+            <!-- GAME: ITALIEN QUIZ -->
+            <div id="game-quiz" class="game-view hidden">
+                <div class="glass-card rounded-3xl p-5 text-center">
+                    <h3 class="font-heading font-extrabold text-white text-lg mb-2 text-glow">Italien Familien-Quiz</h3>
+                    <p class="text-[10px] text-slate-300 mb-6">Testet euer Wissen und sammelt XP!</p>
+                    
+                    <div id="quiz-question-container" class="min-h-[140px] flex flex-col justify-center">
+                        <p id="quiz-question" class="font-bold text-sm text-white mb-5 leading-relaxed">Drücke Start für die erste Frage!</p>
+                        <div id="quiz-answers" class="grid grid-cols-1 gap-3">
+                            <button onclick="app.startQuiz()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl text-sm transition shadow-lg cursor-pointer">Quiz Starten</button>
+                        </div>
+                    </div>
+                    <p id="quiz-score" class="text-[11px] font-extrabold text-amber-400 mt-6 bg-slate-900/50 py-2 rounded-lg border border-slate-700">Punkte: 0</p>
+                </div>
+            </div>
+
+            <!-- GAME: CHI SONO (Wer bin ich?) -->
+            <div id="game-chisono" class="game-view hidden">
+                <div class="bg-gradient-to-br from-purple-600 to-indigo-800 rounded-3xl p-6 text-center text-white shadow-2xl border border-purple-400/30">
+                    <h3 class="font-heading font-extrabold text-2xl mb-2 text-glow">Wer bin ich? 🎭</h3>
+                    <p class="text-[10px] text-purple-200 mb-6">Einer hält das Handy an die Stirn. Die anderen beschreiben den Begriff, ohne das Wort zu nennen!</p>
+                    
+                    <div class="bg-slate-900/80 text-white font-extrabold text-3xl py-10 px-4 rounded-2xl mb-6 border border-purple-500/50 shadow-inner min-h-[160px] flex items-center justify-center break-words" id="chisono-word">
+                        Drücke Start
+                    </div>
+                    
+                    <div class="flex gap-3">
+                        <button onclick="app.nextChiSono(true)" class="flex-1 bg-green-500 hover:bg-green-400 text-white font-black text-sm py-4 rounded-xl shadow-lg transition cursor-pointer"><i class="fa-solid fa-check mb-1 block text-lg"></i> Erraten (+10 XP)</button>
+                        <button onclick="app.nextChiSono(false)" class="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-black text-sm py-4 rounded-xl shadow-lg transition cursor-pointer"><i class="fa-solid fa-forward-step mb-1 block text-lg"></i> Überspringen</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- GAME: DRAW (Mal-Ecke) -->
+            <div id="game-draw" class="game-view hidden">
+                <div class="glass-card rounded-3xl p-4">
+                    <h3 class="font-heading font-extrabold text-white text-lg mb-2 text-glow">Vali's Mal-Ecke 🎨</h3>
+                    <div class="flex gap-2 mb-3 justify-center">
+                        <button onclick="app.setDrawColor('#ef4444')" class="w-8 h-8 rounded-full bg-red-500 border-2 border-white shadow-md cursor-pointer hover:scale-110 transition"></button>
+                        <button onclick="app.setDrawColor('#3b82f6')" class="w-8 h-8 rounded-full bg-blue-500 border-2 border-white shadow-md cursor-pointer hover:scale-110 transition"></button>
+                        <button onclick="app.setDrawColor('#22c55e')" class="w-8 h-8 rounded-full bg-green-500 border-2 border-white shadow-md cursor-pointer hover:scale-110 transition"></button>
+                        <button onclick="app.setDrawColor('#eab308')" class="w-8 h-8 rounded-full bg-yellow-500 border-2 border-white shadow-md cursor-pointer hover:scale-110 transition"></button>
+                        <button onclick="app.setDrawColor('#000000')" class="w-8 h-8 rounded-full bg-black border-2 border-white shadow-md cursor-pointer hover:scale-110 transition"></button>
+                        <button onclick="app.clearCanvas()" class="w-8 h-8 rounded-full bg-white text-black flex items-center justify-center text-sm shadow-md cursor-pointer hover:bg-gray-200 transition"><i class="fa-solid fa-trash"></i></button>
+                    </div>
+                    <canvas id="drawing-canvas"></canvas>
+                </div>
+            </div>
+
+            <!-- GAME: SAFARI -->
+            <div id="game-safari" class="game-view hidden">
+                <div class="glass-card rounded-3xl p-4">
+                    <h3 class="font-heading font-extrabold text-white text-lg mb-4 text-glow">Foto-Safari 📸</h3>
+                    <p class="text-[10px] text-slate-300 mb-4">Sucht diese Dinge aus dem Fenster. Wer es sieht, darf klicken!</p>
+                    <div class="grid grid-cols-2 gap-3" id="safari-grid"></div>
+                </div>
+            </div>
+
+            <!-- GAME: ROULETTE -->
+            <div id="game-roulette" class="game-view hidden">
+                <div class="bg-gradient-to-br from-pink-600 to-purple-800 rounded-3xl p-6 text-center text-white shadow-2xl border border-pink-400/30">
+                    <h3 class="font-heading font-extrabold text-2xl mb-6 text-glow">Eis-Roulette</h3>
+                    <div class="bg-slate-900/80 text-pink-400 font-extrabold text-2xl py-5 rounded-2xl mb-3 border border-pink-500/50 shadow-inner" id="roulette-person">Wer zahlt?</div>
+                    <div class="bg-slate-900/80 text-purple-400 font-extrabold text-xl py-4 rounded-2xl mb-6 border border-purple-500/50 shadow-inner" id="roulette-flavor">Welche Sorte?</div>
+                    <button onclick="app.spinRoulette()" class="w-full bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-300 hover:to-yellow-400 text-purple-950 font-black text-xl py-4 rounded-2xl shadow-[0_0_20px_rgba(250,204,21,0.6)] active:scale-95 transition cursor-pointer border border-yellow-300">DREHEN! 🎰</button>
+                </div>
+            </div>
+
+            <!-- GAME: TARGA -->
+            <div id="game-targa" class="game-view hidden">
+                <div class="glass-card rounded-3xl p-5 text-center">
+                    <h3 class="font-heading font-extrabold text-white text-lg mb-4 text-glow">Kennzeichen-Raten</h3>
+                    <div class="bg-blue-900/50 border-2 border-blue-600 rounded-xl p-5 mb-4 text-center font-mono font-black text-5xl tracking-[0.2em] text-white shadow-inner" id="targa-display">RM</div>
+                    <div id="targa-options" class="grid grid-cols-2 gap-3 mb-4"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== TAB: LUIGI (BOT) ==================== -->
+        <section id="tab-bot" class="tab-content hidden px-4 pt-4 pb-10 flex flex-col h-full">
+            <div class="bg-gradient-to-br from-indigo-900 to-blue-900 rounded-3xl p-5 text-white mb-4 shrink-0 border border-indigo-500/30 shadow-lg relative overflow-hidden">
+                <i class="fa-solid fa-brain absolute -right-4 -bottom-4 text-7xl opacity-10"></i>
+                <h2 class="font-heading text-2xl font-extrabold mb-1">Luigi AI 5.0</h2>
+                <p class="text-[10px] text-indigo-200 mb-3">Offline-Gehirn (50 Witze) aktiv. Für echtes KI-Wissen Gemini Key eingeben.</p>
+                
+                <div class="flex gap-2 mb-3">
+                    <button onclick="app.wikiSearch()" class="bg-blue-500/40 hover:bg-blue-500/60 border border-blue-400/50 text-white text-[10px] font-bold px-3 py-2 rounded-full transition shadow-sm cursor-pointer"><i class="fa-solid fa-location-dot"></i> Was ist hier? (GPS)</button>
+                    <button onclick="app.quickJoke()" class="bg-purple-500/40 hover:bg-purple-500/60 border border-purple-400/50 text-white text-[10px] font-bold px-3 py-2 rounded-full transition shadow-sm cursor-pointer"><i class="fa-solid fa-masks-theater"></i> Witz erzählen</button>
+                </div>
+                <div class="flex items-center gap-2 mt-2 border-t border-white/10 pt-3">
+                    <input type="password" id="gemini-key" placeholder="Gemini API Key (Optional für KI-Modus)" class="flex-1 bg-black/30 border border-white/20 rounded-lg p-2 text-[10px] outline-none text-white placeholder-white/50 focus:border-indigo-400 transition">
+                    <button onclick="app.saveGeminiKey()" class="bg-emerald-600 hover:bg-emerald-500 text-[10px] font-bold px-3 py-2 rounded-lg transition cursor-pointer shadow-md">Save</button>
+                </div>
+            </div>
+            
+            <div id="chat-container" class="flex-1 overflow-y-auto space-y-5 pb-6 px-1 h-[300px] scrollbar-hide">
+                <div class="flex items-end gap-2.5">
+                    <div class="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center shrink-0 border border-blue-300 shadow-md"><span class="text-xl drop-shadow-sm">🤖</span></div>
+                    <div class="chat-bubble-bot p-4 text-[13px] max-w-[85%] font-medium shadow-md">Mamma mia! Frag mich was, lass dir einen Witz erzählen, oder klicke auf "Was ist hier?", dann scanne ich Wikipedia für euren aktuellen GPS-Standort!</div>
+                </div>
+            </div>
+            
+            <div class="mt-2 glass-card rounded-2xl p-1.5 flex items-center shadow-lg border border-slate-600">
+                <input type="text" id="chat-input" placeholder="Nachricht an Luigi..." class="flex-1 bg-transparent px-3 py-2.5 text-sm font-medium outline-none text-white placeholder-slate-400" onkeypress="if(event.key === 'Enter') app.handleChatSubmit()">
+                <button onclick="app.handleChatSubmit()" class="w-11 h-11 bg-blue-600 hover:bg-blue-500 rounded-xl flex items-center justify-center text-white shrink-0 transition shadow-md cursor-pointer"><i class="fa-solid fa-paper-plane text-sm"></i></button>
+            </div>
+        </section>
+    </main>
+
+    <!-- BOTTOM NAV -->
+    <nav class="glass-nav absolute bottom-0 w-full flex justify-around px-2 py-3 z-50">
+        <button onclick="app.switchTab('tab-route', this)" class="nav-item active text-blue-500 scale-110 flex flex-col items-center w-1/5 group transition-all bg-transparent border-none outline-none cursor-pointer">
+            <i class="fa-solid fa-map-location-dot text-[22px] mb-1.5"></i><span class="text-[9px] font-extrabold uppercase tracking-wide">Route</span>
+        </button>
+        <button onclick="app.switchTab('tab-orga', this)" class="nav-item text-slate-500 flex flex-col items-center w-1/5 group transition-all bg-transparent border-none outline-none cursor-pointer">
+            <i class="fa-solid fa-wallet text-[22px] mb-1.5"></i><span class="text-[9px] font-extrabold uppercase tracking-wide">Orga</span>
+        </button>
+        <button onclick="app.switchTab('tab-hacks', this)" class="nav-item text-slate-500 flex flex-col items-center w-1/5 group transition-all bg-transparent border-none outline-none cursor-pointer">
+            <i class="fa-solid fa-lightbulb text-[22px] mb-1.5"></i><span class="text-[9px] font-extrabold uppercase tracking-wide">Hacks</span>
+        </button>
+        <button onclick="app.switchTab('tab-spiele', this)" class="nav-item text-slate-500 flex flex-col items-center w-1/5 group transition-all bg-transparent border-none outline-none cursor-pointer">
+            <i class="fa-solid fa-gamepad text-[22px] mb-1.5 text-amber-400 drop-shadow-[0_0_5px_rgba(251,191,36,0.5)]"></i><span class="text-[9px] font-extrabold uppercase tracking-wide text-amber-400">Spiele</span>
+        </button>
+        <button onclick="app.switchTab('tab-bot', this)" class="nav-item text-slate-500 flex flex-col items-center w-1/5 group transition-all bg-transparent border-none outline-none cursor-pointer">
+            <i class="fa-solid fa-robot text-[22px] mb-1.5 text-indigo-400"></i><span class="text-[9px] font-extrabold uppercase tracking-wide text-indigo-400">Luigi</span>
+        </button>
+    </nav>
+</div>
+
+<script>
+    const app = {
+        state: {
+            xp: 0, level: 1,
+            safari: {}, targaScore: 0,
+            bingo: {}, tricolore: { green: 0, white: 0, red: 0 },
+            diary: [], expenses: [], checklist: {},
+            vault: "", geminiKey: "",
+            briscolaBotScore: 0, briscolaPlayerScore: 0,
+            dailyQuestComplete: false,
+            simStep: 0,
+            gelato: { papa: 0, mamma: 0, miguel: 0, vali: 0 }
+        },
+        confirmCallback: null,
+        mapInitialized: false,
+        notifIndex: 0,
+        
+        simStepsData: [
+            { location: "Sissach", next: "Orvieto", progress: 0, eta: "06:30", badge: "1. Etappe" },
+            { location: "Orvieto", next: "Rom", progress: 33, eta: "01:30", badge: "2. Etappe" },
+            { location: "Rom", next: "Torre San Giovanni", progress: 66, eta: "06:00", badge: "3. Etappe" },
+            { location: "Salento", next: "Lamon", progress: 100, eta: "09:30", badge: "Mammut-Etappe" }
+        ],
+
+        liveNotifications: [
+            "🚨 Orvieto: Parkplatz Foro Boario ansteuern! PIN B&B ist 1296.",
+            "⛽ Tanken: Autobahn vermeiden! Sucht eine Säule mit 'Fai da te'!",
+            "🏛️ Rom: Auto stehen lassen! Metro 'Valle Aurelia' nutzen.",
+            "🏖️ Apulien Check-in: 200€ BAR-Kaution bereithalten!",
+            "🍦 Gelato-Time: Zeit für ein Eis! Wer hat heute noch keins?",
+            "🚦 Tutor-Blitzer: Tempomat auf 135 km/h lassen!"
+        ],
+        
+        gelatoFamily: [
+            { id: "papa", name: "Papa Diego", icon: "👨" },
+            { id: "mamma", name: "Mamma Gabriela", icon: "👩" },
+            { id: "miguel", name: "Miguel (11)", icon: "👦" },
+            { id: "vali", name: "Valentina (5)", icon: "👧" }
+        ],
+
+        checklistData: {
+            "🚗 Proace Verso Setup (14)": [
+                "Maut1-Box an Frontscheibe kleben (VIP-Spur!)", "Kühlbox hinter Beifahrersitz (Stromkabel verlegen)", "1-Nacht-Tasche (Orvieto) GANZ OBEN auflegen",
+                "Schwere Koffer für Apulien ganz unten & hinten", "Reifendruck checken (voll beladen, extra bar!)", "Ölstand & Wischwasser (Sommer-Mix) prüfen",
+                "Warnwesten für 4 Personen im Innenraum griffbereit", "Mülltüten für die lange Fahrt", "Feuchttücher griffbereit vorne & hinten",
+                "Sonnenblenden für die hinteren Fenster (Kids)", "iPad-Halterungen an den Kopfstützen montiert", "Ladekabel (USB-C/Lightning) in 12V Dose gesteckt",
+                "Kühlakkus frisch aus dem Eisfach holen", "Ersatzschlüssel fürs Auto (Gabriela geben)"
+            ],
+            "🧳 Koffer Eltern (18)": [
+                "Unterwäsche (12x Papa, 12x Mama)", "Socken (10x Papa, 10x Mama)", "T-Shirts/Tops (Je 8x)", "Kurze Hosen/Röcke (Je 4x)",
+                "Lange leichte Sommerhose (1x für abends)", "Pullover/Cardigan (1x falls Klimaanlage stark)", "Schlafanzug/Pyjama", "Bequeme Laufschuhe (Städtetrip Rom!)",
+                "Strandschuhe/FlipFlops", "Badesachen (2x pro Pers. zum Wechseln)", "Strandtücher (2x Microfaser)", "Schickes Outfit für Abends (Passeggiata im Salento)",
+                "Sonnenhut/Cap für Strand & Sightseeing", "Sonnenbrille (mit Etui)", "Kulturbeutel (Zahnbürsten, Deo, Duschgel)", "Parfüm & Schminke", "Rasierer & Rasierschaum",
+                "Bargeld-Reserve im Koffer versteckt"
+            ],
+            "🧸 Koffer Kids: Miguel 11 & Vali 5 (16)": [
+                "Unterwäsche (Je 12x)", "Socken (Je 10x)", "T-Shirts (Je 10x)", "Kurze Hosen/Shorts (Je 6x)",
+                "Lange leichte Hose (1x)", "Warmer Pulli (1x für die Fahrt)", "Schlafanzug (Je 2x)", "Bequeme Laufschuhe (Turnschuhe für Rom)",
+                "Wasserschuhe (WICHTIG für Steine in Apulien)", "Badesachen (3x zum Wechseln! Salzwasser brennt)", "UV-Shirts für den Strand (Sehr wichtig im Süden!)",
+                "Strandtücher (Je 1x)", "Sonnenhut/Cap mit Nackenschutz (Vali)", "Kinder-Sonnenbrille", "Zahnbürste & Kinderzahnpasta", "Duschgel/Shampoo brennt nicht in den Augen"
+            ],
+            "🎒 Die 1-Nacht Tasche für Orvieto (5)": [
+                "4x Schlafanzüge (Pyjamas)", "4x Zahnbürsten & kleine Reise-Zahnpasta", "Frische Kleidung für Tag 2 (Weiterfahrt nach Rom)",
+                "Deo & Haarbürste", "Ladekabel fürs Handy (Wandstecker)"
+            ],
+            "🏖️ Strand Equipment Salento (6)": [
+                "Sonnenschirm (falls nicht vorhanden: an Tag 1 im Conad kaufen!)", "Grosse Strandtasche (für Handtücher & Wasser)", "Thermosflaschen (für eiskaltes Wasser am Spiaggia Libera)",
+                "Sandspielzeug (Eimer, Schaufel für Vali)", "Taucherbrille/Schnorchel für Miguel", "Schwimmflügel/Schwimmreifen für Vali"
+            ],
+            "💊 Mega Reiseapotheke (19)": [
+                "Fieberzäpfchen (für Vali)", "Dafalgan/Ibuprofen (Erwachsene & Miguel)", "Mückenspray (Anti-Brumm/Autan Tropical)", "BiteAway (Stichheiler - extrem wichtig!)",
+                "Fenistil Gel (kühlt und heilt Stiche)", "Sonnencreme 50+ (Kids, wasserfest)", "Sonnencreme 30+ (Eltern)", "After Sun Lotion (Aloe Vera)",
+                "Pflaster (Wasserfest, verschiedene Grössen)", "Desinfektionsspray (Octenisept, brennt nicht)", "Digitales Thermometer", "Pinzette (für Zecken/Seeigel/Splitter)",
+                "Reisekrankheit-Kaugummis (für die Kurven nach Lamon)", "Durchfall-Mittel (Perenterol/Imodium)", "Elektrolyte (Elotrans, bei Hitze/Durchfall)", "Wund- und Heilsalbe (Bepanthen)",
+                "Fieberthermometer", "Kohletabletten (bei Magenbeschwerden)", "Ohrentropfen (Schwimmer-Ohr nach dem Pool)"
+            ],
+            "🔌 Technik & Entertainment (7)": [
+                "iPads/Tablets für Kids (100% geladen!)", "Filme OFFLINE heruntergeladen (Netflix/Disney App)", "Kopfhörer für Miguel & Vali",
+                "Ladekabel (USB-C & Lightning) für die Steckdosen", "Powerbank (100% geladen, wichtig für Rom!)", "Handys (Diego & Gabriela)", "Bluetooth-Kopfhörer Eltern"
+            ],
+            "💶 Dokumente & Finanzen (11)": [
+                "Pässe / ID für alle 4 (Gültigkeit geprüft!)", "200€ in BAR (Exakt für Kaution Smeraldo Apulien)", "Kreditkarten (Limit für Italien checken)",
+                "EC-Karten (Maestro/V-Pay für den Notfall)", "Führerausweis (Diego & Gabriela)", "Fahrzeugausweis (Original)", "Grüne Versicherungskarte (Ausdruck!)",
+                "Krankenkassenkärtchen (Alle 4 Personen)", "Buchungsbestätigungen (Alle 4 Hotels offline auf dem Handy)", "E-Sim (Yesim) aktiviert (Datenroaming an)",
+                "Münzen für Parkuhren & Toiletten griffbereit"
+            ],
+            "🍳 Küche & Apartment Basis für Apulien (8)": [
+                "Spülschwamm (neu)", "Kleines Spülmittel (Reisegrösse)", "Küchenrolle (1x)", "Salz & Pfeffer (kleine Streuer/Mühlen)",
+                "Olivenöl (kleine Flasche für den ersten Salat)", "Kaffeepulver (für die italienische Moka Kanne)", "Müllbeutel (WICHTIG für Raccolta Differenziata)", "Taschentücher/Servietten"
+            ],
+            "🆘 SOS Auto-Notfall-Kit (17)": [
+                "Pannendreieck", "Verbandskasten (Ablaufdatum prüfen!)", "Abschleppseil", "Überbrückungskabel", "Ersatzrad/Reifen-Reparatur-Set (Luftdruck prüfen!)",
+                "Wagenheber & Radkreuz", "Taschenlampe (mit vollen Batterien)", "Arbeitshandschuhe", "Decke (falls man nachts liegen bleibt)", "Wasserflasche (als Notreserve, nicht zum Trinken)",
+                "Eiskratzer/Schneebesen", "Ersatzsicherungen", "Ersatzglühbirnen", "Panzertape / Isolierband", "Kabelbinder", "WD-40", "Schweizer Taschenmesser/Multitool"
+            ],
+            "⏳ Last-Minute Check (Zuhause) (6)": [
+                "Müll rausgebracht", "Fenster zu & Lichter aus", "Wasser abgestellt (Waschmaschine etc.)", "Heizung/Thermostat runtergedreht", "Kühlschrank geleert", "Stecker gezogen (TV, PC)"
+            ],
+            "📸 Foto & Erinnerungen (4)": [
+                "Kamera / GoPro geladen", "SD-Karten geleert", "Ladekabel für Kamera", "Reisetagebuch & Stifte für Kids eingepackt"
+            ]
+        },
+
+        jokes: [
+            "Was macht ein Clown im Büro? Faxen!", "Warum summen Bienen? Weil sie den Text nicht kennen!", "Treffen sich zwei Magnete. Sagt der eine: Was ziehst du heute an?",
+            "Warum essen Franzosen Schnecken? Weil sie Fast Food hassen!", "Was ist orange und geht über den Berg? Eine Wanderine!", "Was ist ein Keks unter einem Baum? Ein schattiges Plätzchen!",
+            "Wie nennt man einen dicken Schriftsteller? Kugelschreiber!", "Was macht ein Pirat am Computer? Die Enter-Taste drücken!", "Warum können Geister so schlecht lügen? Weil sie leicht zu durchschauen sind!",
+            "Was ist braun, süss und taucht unter Wasser? Ein U-Brot!", "Was sagt ein italienischer Bäcker, wenn sein Teig wegrennt? Komm Pizza zurück!", "Warum stehen in Rom so viele alte Steine? Weil sie zu schwer zum Wegräumen waren!",
+            "Was essen Autos am liebsten? Parkplätzchen!", "Wie nennt man einen Bumerang, der nicht zurückkommt? Stock.", "Was ist weiss und stört beim Essen? Eine Lawine.",
+            "Warum trinken Mäuse keinen Alkohol? Weil sie Angst vor dem Kater haben.", "Was macht ein Security-Mitarbeiter in der Nudelfabrik? Aufpassen, dass niemand Makkaroni macht!",
+            "Was ist gesund und schwimmt im Wasser? Eine Meer-Rettich!", "Warum können Skelette so schlecht lügen? Weil sie so gut zu durchschauen sind!",
+            "Was ist gelb, krumm und kann schießen? Ein Bananabogen!", "Wie heißt ein spanischer Mörder? El Würgo!", "Was macht ein Keks unterm Baum? Krümeln!",
+            "Egal wie leer du bist, es gibt Menschen, die sind Lehrer.", "Was ist rot und steht am Straßenrand? Eine Steh-B-Eere!", "Was sitzt auf dem Baum und winkt? Ein Huhu!",
+            "Was ist grün und wird auf Knopfdruck rot? Ein Frosch im Mixer!", "Was ist schwarz, weiß und rot überall? Ein Zebra mit Sonnenbrand!",
+            "Warum klauen Vögel keine Autos? Weil sie keinen Führerschein haben!", "Was sagt der große Stift zum kleinen? Wachs-mal-Stift!",
+            "Was ist das Gegenteil von Reformhaus? Reh hinterm Haus!", "Wie nennt man ein verschwundenes Rind? Wer-Mut!", "Was ist süß, klebrig und läuft durch die Wüste? Ein Karamell!",
+            "Treffen sich zwei Kaffeebohnen. Sagt die eine: Du siehst aber geröstet aus!", "Was macht ein Mathematiker im Garten? Wurzeln ziehen!",
+            "Was ist grün und trägt ein Kopftuch? Eine Gürkchen!", "Was essen Piloten am liebsten? Luft-Waffeln!", "Warum mögen Bäume keine Hunde? Weil sie an sie bellen!",
+            "Wie nennt man ein Schwein, das Karate kann? Pork Chop!", "Was sagt ein Vulkan zum anderen? Ich Lava dich!", "Warum ging das Brötchen zum Arzt? Es fühlte sich weich!",
+            "Was macht eine Bombe im Bordell? Platzen vor Freude!", "Welches Tier dreht sich um die eigene Achse? Ein Wendebär!", "Wo wohnen Katzen? Im Miezhaus!",
+            "Was ist klein, grün und dreieckig? Ein kleines, grünes Dreieck!"
+        ],
+
+        quizData: [
+            { q: "Wie heisst die Hauptstadt von Italien?", options: ["Mailand", "Rom", "Neapel"], correct: 1 },
+            { q: "Welche Form hat das Land Italien auf der Landkarte?", options: ["Stiefel", "Pizza", "Hut"], correct: 0 },
+            { q: "Was bedeutet 'Gelato'?", options: ["Sonne", "Strand", "Eiscreme"], correct: 2 },
+            { q: "In welcher Stadt fahren Gondeln statt Autos?", options: ["Venedig", "Rom", "Mailand"], correct: 0 },
+            { q: "Welches Gebirge zieht sich durch ganz Italien?", options: ["Alpen", "Apennin", "Dolomiten"], correct: 1 },
+            { q: "Wie heisst der grosse Vulkan bei Neapel?", options: ["Ätna", "Stromboli", "Vesuv"], correct: 2 }
+        ],
+        quizCurrentQ: 0, quizScore: 0,
+
+        chiSonoData: ["Pizza Margherita", "Papst Franziskus", "Gladiator", "Gelato", "Vespa Roller", "Kolosseum", "Spaghetti", "Gondoliere", "Mona Lisa", "Julius Cäsar"],
+        chiSonoCurrent: 0,
+
+        targaData: [{code: 'RM', city: 'Rom'}, {code: 'MI', city: 'Mailand'}, {code: 'NA', city: 'Neapel'}, {code: 'TO', city: 'Turin'}, {code: 'LE', city: 'Lecce'}, {code: 'FI', city: 'Florenz'}, {code: 'PA', city: 'Palermo'}],
+        safariItems: ["Rote Vespa 🛵", "Polizia 🚓", "Katze 🐈", "Nonna am Fenster 👵", "Ape Dreirad 🛺", "Gelato 🍦", "Zypresse 🌲", "Fiat 500 🚗", "Wäscheleine 👕", "Olivenbaum 🫒", "Mautstelle 🎫", "Tunnel 🛣️"],
+        
+        bingoItems: [
+            { icon: "🚓", label: "Polizia" }, { icon: "🛵", label: "Vespa" }, { icon: "☕", label: "Autogrill" },
+            { icon: "🌲", label: "Zypresse" }, { icon: "🛺", label: "Ape (Dreirad)" }, { icon: "🇨🇭", label: "CH-Auto" },
+            { icon: "🚗", label: "Fiat 500" }, { icon: "⛱️", label: "Sonnenschirm" }, { icon: "🎫", label: "Mautstelle" },
+            { icon: "🚐", label: "Camper" }, { icon: "🍕", label: "Pizza-Schild" }, { icon: "🫒", label: "Olivenbaum" }
+        ],
+
+        suits: [{id:'spade', icon:'🗡️'}, {id:'coppe', icon:'🏆'}, {id:'denari', icon:'🪙'}, {id:'bastoni', icon:'🪵'}],
+        values: [{v:1, p:11, l:'A'}, {v:3, p:10, l:'3'}, {v:10, p:4, l:'Re'}, {v:9, p:3, l:'Cav'}, {v:8, p:2, l:'Fan'}, {v:7, p:0, l:'7'}, {v:6, p:0, l:'6'}, {v:5, p:0, l:'5'}, {v:4, p:0, l:'4'}, {v:2, p:0, l:'2'}],
+        deck: [], playerHand: [], botHand: [], trumpCard: null,
+
+        init: function() {
+            try {
+                const saved = localStorage.getItem('bi36_master_state');
+                if(saved) this.state = Object.assign(this.state, JSON.parse(saved));
+            } catch(e) { console.error("LocalStorage load error", e); }
+            
+            if(document.getElementById('gemini-key')) document.getElementById('gemini-key').value = this.state.geminiKey || "";
+            if(document.getElementById('vault-text')) document.getElementById('vault-text').value = this.state.vault || "";
+            if(document.getElementById('user-level')) document.getElementById('user-level').innerText = this.state.level;
+            
+            this.initChecklist();
+            this.renderExpenses();
+            this.renderDiary();
+            this.initSafari();
+            this.initBingo();
+            this.renderTricolore();
+            this.initDrawCanvas();
+            this.initTarga();
+            this.initDailyQuest();
+            this.renderGelato();
+            this.setRouteSim(this.state.simStep || 0);
+            
+            window.addEventListener('resize', () => { 
+                if(document.getElementById('game-draw') && document.getElementById('game-draw').classList.contains('block')) this.initDrawCanvas(); 
+            });
+        },
+        
+        saveState: function() { 
+            try { localStorage.setItem('bi36_master_state', JSON.stringify(this.state)); } catch(e) {}
+        },
+
+        showToast: function(msg) {
+            const t = document.getElementById('custom-toast');
+            if(!t) return;
+            t.innerHTML = `<i class="fa-solid fa-circle-check text-blue-400"></i> ${msg}`;
+            t.classList.remove('opacity-0', 'translate-y-[-20px]', 'pointer-events-none');
+            setTimeout(() => { t.classList.add('opacity-0', 'translate-y-[-20px]', 'pointer-events-none'); }, 3000);
+        },
+
+        showConfirmModal: function(title, text, callback) {
+            document.getElementById('confirm-title').innerText = title;
+            document.getElementById('confirm-text').innerText = text;
+            this.confirmCallback = callback;
+            document.getElementById('confirm-modal').classList.add('active');
+        },
+
+        closeConfirmModal: function(isConfirmed) {
+            document.getElementById('confirm-modal').classList.remove('active');
+            if (isConfirmed && typeof this.confirmCallback === 'function') {
+                this.confirmCallback();
+            }
+            this.confirmCallback = null;
+        },
+
+        addXP: function(amount) {
+            this.state.xp += amount;
+            let newLvl = Math.floor(this.state.xp / 100) + 1;
+            if(newLvl > this.state.level) {
+                this.state.level = newLvl;
+                document.getElementById('user-level').innerText = newLvl;
+                this.showToast(`🎉 LEVEL UP! Familie ist jetzt Level ${newLvl}!`);
+            }
+            this.saveState();
+        },
+
+        switchTab: function(tabId, btnElement) {
+            document.querySelectorAll('.tab-content').forEach(tab => { tab.classList.remove('block'); tab.classList.add('hidden'); });
+            const target = document.getElementById(tabId);
+            if (target) { target.classList.remove('hidden'); target.classList.add('block'); }
+            document.querySelectorAll('.nav-item').forEach(btn => {
+                btn.classList.remove('text-blue-500', 'scale-110'); btn.classList.add('text-slate-500');
+            });
+            if(btnElement) {
+                btnElement.classList.remove('text-slate-500'); btnElement.classList.add('text-blue-500', 'scale-110');
+            }
+            document.getElementById('main-scroll').scrollTo({top: 0, behavior: 'smooth'});
+            if(tabId === 'tab-spiele' && document.getElementById('game-draw').classList.contains('block')) setTimeout(()=>this.initDrawCanvas(), 100);
+        },
+
+        toggleMap: function() {
+            const mapContainer = document.getElementById('map-container-wrapper');
+            const chev = document.getElementById('map-chevron');
+            if (mapContainer.classList.contains('hidden')) {
+                mapContainer.classList.remove('hidden');
+                chev.style.transform = 'rotate(180deg)';
+                setTimeout(() => this.initMap(), 100);
+            } else {
+                mapContainer.classList.add('hidden');
+                chev.style.transform = 'rotate(0deg)';
+            }
+        },
+
+        initMap: function() {
+            if (this.mapInitialized || typeof L === 'undefined') return;
+            try {
+                this.map = L.map('trip-map').setView([41.9028, 12.4964], 5);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© OpenStreetMap'
+                }).addTo(this.map);
+
+                const routeCoords = [
+                    [47.4667, 7.8167], // Sissach
+                    [42.7174, 12.1116], // Orvieto
+                    [41.9028, 12.4964], // Rome
+                    [39.8885, 18.1130], // Salento
+                    [46.0463, 11.7460] // Lamon
+                ];
+                
+                L.polyline(routeCoords, {color: '#3b82f6', weight: 4}).addTo(this.map);
+                
+                L.marker([47.4667, 7.8167]).addTo(this.map).bindPopup("Start: Sissach");
+                L.marker([42.7174, 12.1116]).addTo(this.map).bindPopup("1. Orvieto");
+                L.marker([41.9028, 12.4964]).addTo(this.map).bindPopup("2. Rom");
+                L.marker([39.8885, 18.1130]).addTo(this.map).bindPopup("3. Salento");
+                L.marker([46.0463, 11.7460]).addTo(this.map).bindPopup("4. Lamon");
+                
+                this.map.fitBounds(L.polyline(routeCoords).getBounds());
+                this.mapInitialized = true;
+            } catch (e) { console.error("Map init failed", e); }
+        },
+
+        setRouteSim: function(stepIndex) {
+            this.state.simStep = stepIndex;
+            this.saveState();
+            const data = this.simStepsData[stepIndex];
+            if(document.getElementById("current-location-text")) {
+                document.getElementById("current-location-text").innerText = data.location;
+                document.getElementById("next-stop-text").innerText = data.next;
+                document.getElementById("route-indicator-bar").style.width = data.progress + "%";
+                document.getElementById("eta-time-text").innerText = data.eta + " Std.";
+                document.getElementById("route-badge").innerText = data.badge;
+            }
+        },
+
+        simulateNextRouteStep: function() {
+            let nextIndex = (this.state.simStep + 1) % this.simStepsData.length;
+            this.setRouteSim(nextIndex);
+            this.triggerLiveNotification();
+        },
+
+        triggerLiveNotification: function() {
+            const msg = this.liveNotifications[this.notifIndex];
+            this.notifIndex = (this.notifIndex + 1) % this.liveNotifications.length;
+            
+            const t = document.getElementById('custom-toast');
+            if(!t) return;
+            t.innerHTML = `<i class="fa-solid fa-bell text-yellow-400"></i> ${msg}`;
+            t.classList.remove('opacity-0', 'translate-y-[-20px]', 'pointer-events-none');
+            setTimeout(() => { t.classList.add('opacity-0', 'translate-y-[-20px]', 'pointer-events-none'); }, 5000);
+        },
+
+        showGame: function(gameId, btn) {
+            document.querySelectorAll('.game-view').forEach(v => { v.classList.remove('block'); v.classList.add('hidden'); });
+            document.getElementById(gameId).classList.remove('hidden'); document.getElementById(gameId).classList.add('block');
+            document.querySelectorAll('.game-btn').forEach(b => { b.classList.remove('active-game', 'text-white', 'border-transparent'); b.classList.add('bg-slate-800', 'text-slate-300', 'border-slate-700'); });
+            btn.classList.remove('bg-slate-800', 'text-slate-300', 'border-slate-700'); btn.classList.add('active-game', 'text-white', 'border-transparent');
+            if(gameId === 'game-draw') setTimeout(() => this.initDrawCanvas(), 100);
+        },
+
+        toggleAccordion: function(id, btn) {
+            const el = document.getElementById(id);
+            if(el.classList.contains('hidden')) { el.classList.remove('hidden'); btn.querySelector('i.fa-chevron-down').style.transform = 'rotate(180deg)'; } 
+            else { el.classList.add('hidden'); btn.querySelector('i.fa-chevron-down').style.transform = 'rotate(0deg)'; }
+        },
+
+        openSOS: function() { document.getElementById('sos-modal').classList.add('active'); },
+        closeSOS: function() { document.getElementById('sos-modal').classList.remove('active'); },
+        
+        sendEmergencyEmail: function() {
+            try {
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition((pos) => {
+                        const lat = pos.coords.latitude; const lon = pos.coords.longitude;
+                        const link = `https://maps.google.com/?q=${lat},${lon}`;
+                        const subject = encodeURIComponent("SOS Notfall Bella Italia");
+                        const body = encodeURIComponent(`Wir brauchen Hilfe!\n\nUnser Live-Standort:\n${link}`);
+                        window.location.href = `mailto:carpenediego@gmail.com?subject=${subject}&body=${body}`;
+                        this.showToast("Email App wird geöffnet...");
+                    }, () => { 
+                        window.location.href = `mailto:carpenediego@gmail.com?subject=SOS Notfall Bella Italia&body=Wir brauchen Hilfe!`;
+                        this.showToast("Email App geöffnet (ohne GPS)"); 
+                    });
+                } else { 
+                    window.location.href = `mailto:carpenediego@gmail.com?subject=SOS Notfall Bella Italia&body=Wir brauchen Hilfe!`;
+                }
+            } catch (e) { console.error(e); }
+        },
+
+        speak: function(text, lang='it-IT') {
+            try {
+                if('speechSynthesis' in window) {
+                    window.speechSynthesis.cancel();
+                    const u = new SpeechSynthesisUtterance(text); u.lang = lang; u.rate = 0.9;
+                    window.speechSynthesis.speak(u);
+                }
+            } catch(e) { console.error("TTS Error", e); }
+        },
+
+        calcCurrency: function(type) {
+            const eur = document.getElementById('eur-input'); const chf = document.getElementById('chf-input');
+            if(type === 'eur' && eur.value) chf.value = (eur.value * 0.95).toFixed(2);
+            if(type === 'chf' && chf.value) eur.value = (chf.value / 0.95).toFixed(2);
+        },
+
+        unlockVault: function() {
+            const pin = document.getElementById('vault-pin').value;
+            if(pin === "0000") {
+                document.getElementById('vault-content').classList.remove('hidden'); this.showToast("Tresor entsperrt.");
+            } else { this.showToast("Falsche PIN!"); }
+        },
+        saveVault: function() {
+            this.state.vault = document.getElementById('vault-text').value; this.saveState();
+            document.getElementById('vault-content').classList.add('hidden'); document.getElementById('vault-pin').value = '';
+            this.showToast("Gespeichert & Gesperrt.");
+        },
+
+        initChecklist: function() {
+            const container = document.getElementById('checklist-container');
+            if (!container) return;
+            container.innerHTML = '';
+            let total = 0; let checked = 0;
+            
+            for (const [cat, itemsArray] of Object.entries(this.checklistData)) {
+                let html = `<div class="bg-slate-900/50 rounded-2xl p-3 border border-slate-700 shadow-inner mb-3">
+                    <h3 class="font-bold text-slate-300 text-[11px] mb-2 pb-1 border-b border-slate-700 flex items-center justify-between"><span>${cat}</span><span class="bg-slate-800 px-2 py-0.5 rounded text-[9px]">${itemsArray.length}</span></h3>
+                    <div class="space-y-2 checklist-acc hidden" id="acc-${cat.replace(/\s+/g,'').replace(/[^a-zA-Z0-9]/g, '')}">`;
+                itemsArray.forEach((text, i) => {
+                    total++; let id = cat.charAt(0) + i + text.substring(0,3);
+                    let isChecked = this.state.checklist[id] ? 'checked' : '';
+                    let completed = this.state.checklist[id] ? 'completed' : '';
+                    if(isChecked) checked++;
+                    html += `<label class="check-container flex items-start gap-2 cursor-pointer group ${completed}">
+                            <div class="relative flex items-center mt-0.5 shrink-0">
+                                <input type="checkbox" class="sr-only" onchange="app.toggleCheck('${id}', this)" ${isChecked}>
+                                <div class="w-4 h-4 border border-slate-500 rounded bg-slate-800 flex items-center justify-center transition-colors">
+                                    <svg class="w-3 h-3 text-white hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3"><path d="M5 13l4 4L19 7"></path></svg>
+                                </div>
+                            </div>
+                            <span class="text-[11px] text-slate-300 leading-tight select-none">${text}</span>
+                        </label>`;
+                });
+                let accId = `acc-${cat.replace(/\s+/g,'').replace(/[^a-zA-Z0-9]/g, '')}`;
+                html += `</div><button onclick="app.toggleAccordion('${accId}', this)" class="w-full text-center mt-2 text-[10px] text-slate-500 cursor-pointer hover:text-slate-300"><i class="fa-solid fa-chevron-down transition-transform"></i></button></div>`;
+                container.innerHTML += html;
+            }
+            let pct = total === 0 ? 0 : Math.round((checked/total)*100);
+            if(document.getElementById('progress-bar')) document.getElementById('progress-bar').style.width = pct + '%';
+            if(document.getElementById('progress-text')) document.getElementById('progress-text').innerText = `${checked}/${total} gepackt`;
+        },
+        toggleCheck: function(id, cb) { this.state.checklist[id] = cb.checked; this.saveState(); this.initChecklist(); },
+        resetChecklist: function() { this.state.checklist = {}; this.saveState(); this.initChecklist(); this.showToast("Liste zurückgesetzt."); },
+        expandAllChecklist: function() { document.querySelectorAll('.checklist-acc').forEach(el => el.classList.remove('hidden')); },
+
+        addExpense: function() {
+            const cat = document.getElementById('exp-cat').value; const amt = parseFloat(document.getElementById('exp-amt').value);
+            if(cat && !isNaN(amt) && amt > 0) {
+                this.state.expenses.unshift({id: Date.now(), cat: cat, amt: amt}); this.saveState();
+                document.getElementById('exp-amt').value = ''; this.renderExpenses();
+            }
+        },
+        clearExpenses: function() { this.state.expenses = []; this.saveState(); this.renderExpenses(); this.showToast("Kasse geleert."); },
+        renderExpenses: function() {
+            const list = document.getElementById('expense-list'); 
+            if (!list) return;
+            list.innerHTML = ''; let total = 0;
+            this.state.expenses.forEach(e => {
+                total += e.amt;
+                list.innerHTML += `<div class="flex justify-between items-center bg-slate-900/50 p-2 rounded-lg border border-slate-700"><span class="text-xs text-slate-300 font-bold">${e.cat}</span><span class="font-mono text-xs text-red-400 font-bold">${e.amt.toFixed(2)} €</span></div>`;
+            });
+            let left = 3000 - total;
+            if(document.getElementById('budget-left')) document.getElementById('budget-left').innerText = `${left.toFixed(0)} € übrig`;
+            if(document.getElementById('budget-bar-remaining')) document.getElementById('budget-bar-remaining').style.width = Math.max(0, (left/3000)*100) + '%';
+        },
+
+        saveDiary: function() {
+            const txt = document.getElementById('diary-text').value;
+            if(txt) {
+                this.state.diary.unshift({date: new Date().toLocaleDateString('de-DE'), text: txt});
+                this.saveState(); document.getElementById('diary-text').value = ''; this.renderDiary(); this.showToast("Gespeichert!");
+            }
+        },
+        renderDiary: function() {
+            const feed = document.getElementById('diary-feed'); 
+            if (!feed) return;
+            feed.innerHTML = '';
+            this.state.diary.forEach(e => { feed.innerHTML += `<div class="bg-slate-900/50 p-3 rounded-xl border border-slate-700"><span class="text-[9px] text-blue-400 font-bold block mb-1">${e.date}</span><p class="text-xs text-slate-300">${e.text}</p></div>`; });
+        },
+
+        calcTip: function(pct) {
+            const amt = parseFloat(document.getElementById('bill-amount').value);
+            if(!isNaN(amt) && amt > 0) document.getElementById('tip-result').innerText = (amt * pct).toFixed(2) + ' €';
+            else this.showToast("Betrag eingeben!");
+        },
+
+        calculateLiveETA: function() {
+            const res = document.getElementById('eta-result'); res.innerText = "Orte... 📡";
+            const val = document.getElementById('eta-destination').value;
+            const [tLat, tLon, name] = val.split('|');
+            
+            try {
+                if(navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(pos => {
+                        const R = 6371; // km
+                        const dLat = (tLat - pos.coords.latitude) * Math.PI / 180;
+                        const dLon = (tLon - pos.coords.longitude) * Math.PI / 180;
+                        const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(pos.coords.latitude * Math.PI / 180) * Math.cos(tLat * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
+                        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+                        const dist = R * c * 1.2; // routing factor
+                        
+                        const speed = pos.coords.speed ? (pos.coords.speed * 3.6).toFixed(0) : Math.floor(Math.random() * 20 + 90);
+                        document.getElementById('telemetry-speed').innerText = speed;
+                        document.getElementById('speed-ring').style.setProperty('--val', `${Math.min(100, speed/1.5)}%`);
+                        
+                        const hours = dist / 90;
+                        const h = Math.floor(hours); const m = Math.floor((hours - h) * 60);
+                        res.innerText = `${h}h ${m}m (${dist.toFixed(0)}km)`;
+                    }, () => { res.innerText = "GPS Error. (Simuliere: 3h 45m)"; document.getElementById('telemetry-speed').innerText = 112; });
+                } else { res.innerText = "Kein GPS."; }
+            } catch(e) { res.innerText = "Fehler bei Ortung."; }
+        },
+        speakKidsETA: function() {
+            const select = document.getElementById('eta-destination');
+            const dest = select.options[select.selectedIndex].text.split('. ')[1];
+            const eta = document.getElementById('eta-result').innerText;
+            this.speak(`Mamma mia! Wir fahren nach ${dest}. Wir sind in etwa ${eta} da. Haltet durch, ihr kleinen Monsterchen!`, 'de-DE');
+        },
+
+        initDailyQuest: function() {
+            const quests = ["Findet ein Gebäude, das älter als 500 Jahre ist!", "Begrüsst einen Kellner fehlerfrei auf Italienisch!", "Findet ein Auto mit CH-Kennzeichen!", "Esst ein Gelato mit einer Sorte, die ihr noch nie hattet!"];
+            if (document.getElementById('daily-quest-text')) {
+                document.getElementById('daily-quest-text').innerText = quests[Math.floor(Math.random() * quests.length)];
+            }
+        },
+        completeQuest: function(btn) {
+            if(!this.state.dailyQuestComplete) {
+                this.state.dailyQuestComplete = true;
+                btn.innerText = "Erledigt! ✅"; btn.classList.replace('bg-amber-500', 'bg-green-500');
+                this.addXP(50); this.saveState();
+            }
+        },
+
+        renderGelato: function() {
+            const container = document.getElementById('gelato-list');
+            if(!container) return;
+            container.innerHTML = '';
+            this.gelatoFamily.forEach(member => {
+                const count = this.state.gelato[member.id] || 0;
+                container.innerHTML += `
+                    <div class="flex items-center justify-between bg-slate-900/50 p-2 rounded-2xl border border-slate-700 shadow-inner">
+                        <div class="flex items-center gap-2">
+                            <span class="text-xl bg-slate-800 p-1.5 rounded-full border border-slate-600">${member.icon}</span>
+                            <span class="text-[11px] font-bold text-slate-200">${member.name}</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <button onclick="app.updateGelato('${member.id}', -1)" class="w-8 h-8 rounded-full bg-red-900/50 text-red-400 font-bold border border-red-700 hover:bg-red-800 transition">-</button>
+                            <span class="font-mono font-extrabold text-white text-lg w-6 text-center text-glow">${count}</span>
+                            <button onclick="app.updateGelato('${member.id}', 1)" class="w-8 h-8 rounded-full bg-green-900/50 text-green-400 font-bold border border-green-700 hover:bg-green-800 transition">+</button>
+                        </div>
+                    </div>
+                `;
+            });
+        },
+        updateGelato: function(id, change) {
+            if(!this.state.gelato) this.state.gelato = { papa: 0, mamma: 0, miguel: 0, vali: 0 };
+            let count = (this.state.gelato[id] || 0) + change;
+            if(count < 0) count = 0;
+            this.state.gelato[id] = count;
+            this.saveState();
+            this.renderGelato();
+            if(change > 0) this.addXP(2);
+        },
+        resetGelato: function() {
+            this.state.gelato = { papa: 0, mamma: 0, miguel: 0, vali: 0 };
+            this.saveState();
+            this.renderGelato();
+            this.showToast("Eis-Zähler auf Null!");
+        },
+
+        startQuiz: function() {
+            this.quizCurrentQ = 0; this.quizScore = 0; this.showQuizQuestion();
+        },
+        showQuizQuestion: function() {
+            if(this.quizCurrentQ >= this.quizData.length) {
+                document.getElementById('quiz-question').innerText = `🎉 Quiz beendet! Ihr habt ${this.quizScore} von ${this.quizData.length} Punkten!`;
+                document.getElementById('quiz-answers').innerHTML = `<button onclick="app.startQuiz()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl text-sm w-full">Nochmal spielen</button>`;
+                this.addXP(this.quizScore * 10);
+                return;
+            }
+            const qData = this.quizData[this.quizCurrentQ];
+            document.getElementById('quiz-question').innerText = qData.q;
+            let answersHtml = '';
+            qData.options.forEach((opt, index) => {
+                answersHtml += `<button onclick="app.answerQuiz(${index})" class="bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 font-bold py-3 rounded-xl text-xs w-full transition">${opt}</button>`;
+            });
+            document.getElementById('quiz-answers').innerHTML = answersHtml;
+            document.getElementById('quiz-score').innerText = `Punkte: ${this.quizScore}`;
+        },
+        answerQuiz: function(selectedIndex) {
+            const correctIndex = this.quizData[this.quizCurrentQ].correct;
+            const buttons = document.getElementById('quiz-answers').children;
+            if(selectedIndex === correctIndex) {
+                buttons[selectedIndex].classList.add('bg-green-600', 'border-green-500'); buttons[selectedIndex].classList.remove('bg-slate-800'); this.quizScore++;
+            } else {
+                buttons[selectedIndex].classList.add('bg-red-600', 'border-red-500'); buttons[selectedIndex].classList.remove('bg-slate-800');
+                buttons[correctIndex].classList.add('bg-green-600', 'border-green-500'); buttons[correctIndex].classList.remove('bg-slate-800');
+            }
+            this.quizCurrentQ++; setTimeout(() => this.showQuizQuestion(), 1200);
+        },
+
+        nextChiSono: function(guessed) {
+            if(guessed) this.addXP(10);
+            this.chiSonoData.sort(() => Math.random() - 0.5);
+            document.getElementById('chisono-word').innerText = this.chiSonoData[0];
+        },
+
+        initTarga: function() {
+            const current = this.targaData[Math.floor(Math.random() * this.targaData.length)];
+            const tDisplay = document.getElementById('targa-display');
+            if(tDisplay) tDisplay.innerText = current.code;
+            let opts = [current.city];
+            while(opts.length < 4) {
+                let r = this.targaData[Math.floor(Math.random() * this.targaData.length)].city;
+                if(!opts.includes(r)) opts.push(r);
+            }
+            opts.sort(() => Math.random() - 0.5);
+            const tOpts = document.getElementById('targa-options');
+            if(tOpts) {
+                tOpts.innerHTML = opts.map(o => `<button onclick="app.checkTarga('${o}', '${current.city}')" class="bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-300 font-bold py-4 rounded-xl text-sm transition cursor-pointer">${o}</button>`).join('');
+            }
+        },
+        checkTarga: function(ans, correct) {
+            if(ans === correct) { this.showToast("Korrekt! +10 XP"); this.addXP(10); } else { this.showToast("Falsch: " + correct); }
+            setTimeout(() => this.initTarga(), 800);
+        },
+
+        initSafari: function() {
+            let html = '';
+            this.safariItems.forEach((item, i) => {
+                let c = this.state.safari[i] ? 'opacity-30 grayscale' : 'hover:scale-105';
+                html += `<button onclick="app.checkSafari(${i}, this)" class="bg-slate-800 p-4 rounded-2xl border border-slate-700 text-xs font-bold text-slate-300 transition shadow-md cursor-pointer ${c}">${item}</button>`;
+            });
+            const sGrid = document.getElementById('safari-grid');
+            if (sGrid) sGrid.innerHTML = html;
+        },
+        checkSafari: function(i, btn) {
+            if(!this.state.safari[i]) {
+                this.state.safari[i] = true; btn.classList.add('opacity-30', 'grayscale'); btn.classList.remove('hover:scale-105');
+                this.showToast("Fotografiert! +25 XP"); this.addXP(25); this.saveState();
+            }
+        },
+
+        initBingo: function() {
+            let html = '';
+            if(!this.state.bingo) this.state.bingo = {};
+            this.bingoItems.forEach((item, i) => {
+                let c = this.state.bingo[i] ? 'bg-green-600 border-green-400' : 'bg-slate-800 border-slate-700';
+                html += `<div onclick="app.toggleBingo(${i}, this)" class="rounded-xl p-2 flex flex-col items-center justify-center text-center cursor-pointer aspect-square transition hover:scale-105 active:scale-95 border shadow-sm ${c}"><span class="text-3xl mb-1">${item.icon}</span><span class="text-[9px] font-bold text-slate-200">${item.label}</span></div>`;
+            });
+            const bGrid = document.getElementById('bingo-grid');
+            if (bGrid) bGrid.innerHTML = html;
+        },
+        toggleBingo: function(i, el) {
+            this.state.bingo[i] = !this.state.bingo[i];
+            if(this.state.bingo[i]) {
+                el.classList.add('bg-green-600', 'border-green-400'); el.classList.remove('bg-slate-800', 'border-slate-700');
+                this.addXP(5); this.showToast("Bingo Feld markiert! +5 XP");
+            } else {
+                el.classList.remove('bg-green-600', 'border-green-400'); el.classList.add('bg-slate-800', 'border-slate-700');
+            }
+            this.saveState();
+        },
+        resetBingo: function() { this.state.bingo = {}; this.saveState(); this.initBingo(); this.showToast("Bingo zurückgesetzt."); },
+
+        renderTricolore: function() {
+            if(!this.state.tricolore) this.state.tricolore = { green: 0, white: 0, red: 0 };
+            if(document.getElementById('count-green')) {
+                document.getElementById('count-green').innerText = this.state.tricolore.green;
+                document.getElementById('count-white').innerText = this.state.tricolore.white;
+                document.getElementById('count-red').innerText = this.state.tricolore.red;
+            }
+        },
+        updateTricolore: function(color) {
+            if(!this.state.tricolore) this.state.tricolore = { green: 0, white: 0, red: 0 };
+            if(this.state.tricolore[color] < 10) {
+                this.state.tricolore[color]++; this.renderTricolore(); this.addXP(5); this.saveState();
+                if(this.state.tricolore.green === 10 && this.state.tricolore.white === 10 && this.state.tricolore.red === 10) {
+                    this.showToast("Tricolore komplett! Zeit für ein Gelato!"); this.addXP(50);
+                }
+            }
+        },
+        resetTricolore: function() { this.state.tricolore = { green: 0, white: 0, red: 0 }; this.saveState(); this.renderTricolore(); this.showToast("Tricolore zurückgesetzt."); },
+
+        spinRoulette: function() {
+            const p = ["Diego", "Gabriela", "Miguel", "Valentina"];
+            const f = ["Fragola", "Pistacchio", "Limone", "Cioccolato", "Stracciatella", "Fior di Latte", "Puffo"];
+            let i = 0;
+            const int = setInterval(() => {
+                document.getElementById('roulette-person').innerText = p[i%p.length];
+                document.getElementById('roulette-flavor').innerText = f[i%f.length];
+                i++;
+            }, 80);
+            setTimeout(() => {
+                clearInterval(int);
+                document.getElementById('roulette-person').innerText = p[Math.floor(Math.random()*p.length)] + " zahlt!";
+                document.getElementById('roulette-flavor').innerText = f[Math.floor(Math.random()*f.length)];
+                this.addXP(5); 
+            }, 2000);
+        },
+
+        ctx: null, isDrawing: false, lastX: 0, lastY: 0, currentColor: '#ef4444',
+        initDrawCanvas: function() {
+            const canvas = document.getElementById('drawing-canvas');
+            if(!canvas) return;
+            const rect = canvas.parentElement.getBoundingClientRect();
+            canvas.width = rect.width - 32; canvas.height = 250;
+            this.ctx = canvas.getContext('2d');
+            this.ctx.lineJoin = 'round'; this.ctx.lineCap = 'round'; this.ctx.lineWidth = 5;
+            this.ctx.fillStyle = "white"; this.ctx.fillRect(0,0, canvas.width, canvas.height);
+            
+            canvas.ontouchstart = canvas.onmousedown = (e) => {
+                e.preventDefault(); this.isDrawing = true;
+                const touch = e.touches ? e.touches[0] : e;
+                const r = canvas.getBoundingClientRect();
+                this.lastX = touch.clientX - r.left; this.lastY = touch.clientY - r.top;
+            };
+            canvas.ontouchmove = canvas.onmousemove = (e) => {
+                if(!this.isDrawing) return; e.preventDefault();
+                const touch = e.touches ? e.touches[0] : e;
+                const r = canvas.getBoundingClientRect();
+                const x = touch.clientX - r.left; const y = touch.clientY - r.top;
+                this.ctx.strokeStyle = this.currentColor;
+                this.ctx.beginPath(); this.ctx.moveTo(this.lastX, this.lastY); this.ctx.lineTo(x, y); this.ctx.stroke();
+                this.lastX = x; this.lastY = y;
+            };
+            canvas.ontouchend = canvas.onmouseup = canvas.onmouseout = () => this.isDrawing = false;
+        },
+        setDrawColor: function(c) { this.currentColor = c; },
+        clearCanvas: function() { if(this.ctx) { this.ctx.fillStyle = "white"; this.ctx.fillRect(0,0, this.ctx.canvas.width, this.ctx.canvas.height); } },
+
+        getCardHTML: function(suit, val, hidden=false) {
+            if(hidden) return `<div class="card-trevisane" style="background:#1e293b; border-color:#475569; color:transparent;">?</div>`;
+            return `<div class="card-trevisane ${suit.id}"><span class="card-corner">${val.l}</span><span class="card-center">${suit.icon}</span><span class="card-corner" style="bottom:2px; top:auto; right:4px; left:auto; transform:rotate(180deg);">${val.l}</span></div>`;
+        },
+        startBriscola: function() {
+            document.getElementById('briscola-overlay').classList.add('hidden');
+            this.deck = [];
+            this.suits.forEach(s => this.values.forEach(v => this.deck.push({s:s, v:v})));
+            this.deck.sort(() => Math.random() - 0.5);
+            this.playerHand = [this.deck.pop(), this.deck.pop(), this.deck.pop()];
+            this.botHand = [this.deck.pop(), this.deck.pop(), this.deck.pop()];
+            this.trumpCard = this.deck.pop();
+            
+            document.getElementById('trump-suit-icon').innerText = this.trumpCard.s.icon;
+            document.getElementById('briscola-message').innerText = "Dein Zug!";
+            this.renderBriscolaHands();
+        },
+        renderBriscolaHands: function() {
+            document.getElementById('briscola-bot-hand').innerHTML = this.botHand.map(() => this.getCardHTML(null, null, true)).join('');
+            document.getElementById('briscola-player-hand').innerHTML = this.playerHand.map((c, i) => `<div onclick="app.playBriscola(${i})" class="hover:-translate-y-2 transition cursor-pointer">${this.getCardHTML(c.s, c.v)}</div>`).join('');
+            document.getElementById('briscola-bot-score').innerText = this.state.briscolaBotScore;
+            document.getElementById('briscola-player-score').innerText = this.state.briscolaPlayerScore;
+        },
+        playBriscola: function(index) {
+            if(this.playerHand.length === 0) return;
+            const pCard = this.playerHand.splice(index, 1)[0];
+            document.getElementById('briscola-player-play').innerHTML = this.getCardHTML(pCard.s, pCard.v);
+            document.getElementById('briscola-player-play').classList.remove('opacity-50');
+            this.renderBriscolaHands();
+            document.getElementById('briscola-message').innerText = "Luigi denkt nach...";
+            
+            setTimeout(() => {
+                const bCard = this.botHand.pop();
+                document.getElementById('briscola-bot-play').innerHTML = this.getCardHTML(bCard.s, bCard.v);
+                document.getElementById('briscola-bot-play').classList.remove('opacity-50');
+                
+                let pWins = false;
+                if(pCard.s.id === this.trumpCard.s.id && bCard.s.id !== this.trumpCard.s.id) pWins = true;
+                else if(pCard.s.id !== this.trumpCard.s.id && bCard.s.id === this.trumpCard.s.id) pWins = false;
+                else if(pCard.s.id === bCard.s.id) pWins = pCard.v.p > bCard.v.p || (pCard.v.p === bCard.v.p && pCard.v.v > bCard.v.v);
+                else pWins = true; 
+                
+                const points = pCard.v.p + bCard.v.p;
+                if(pWins) { this.state.briscolaPlayerScore += points; document.getElementById('briscola-message').innerText = `Du gewinnst den Stich! (+${points})`; }
+                else { this.state.briscolaBotScore += points; document.getElementById('briscola-message').innerText = `Luigi gewinnt. (+${points})`; }
+                this.saveState(); this.renderBriscolaHands();
+
+                setTimeout(() => {
+                    document.getElementById('briscola-bot-play').innerHTML = "?"; document.getElementById('briscola-bot-play').classList.add('opacity-50');
+                    document.getElementById('briscola-player-play').innerHTML = "?"; document.getElementById('briscola-player-play').classList.add('opacity-50');
+                    if(this.deck.length > 0) { this.playerHand.push(this.deck.pop()); this.botHand.push(this.deck.pop()); }
+                    
+                    if(this.playerHand.length === 0) {
+                        document.getElementById('briscola-message').innerText = this.state.briscolaPlayerScore > this.state.briscolaBotScore ? "DU HAST GEWONNEN! +100 XP" : "Luigi hat gewonnen.";
+                        if(this.state.briscolaPlayerScore > this.state.briscolaBotScore) this.addXP(100);
+                        document.getElementById('briscola-overlay').classList.remove('hidden');
+                        document.getElementById('briscola-start-btn').innerText = "NEUES SPIEL";
+                    } else {
+                        document.getElementById('briscola-message').innerText = "Dein Zug!"; this.renderBriscolaHands();
+                    }
+                }, 1500);
+            }, 1000);
+        },
+
+        saveGeminiKey: function() {
+            this.state.geminiKey = document.getElementById('gemini-key').value.trim(); this.saveState();
+            this.showToast("API Key gespeichert.");
+        },
+        quickJoke: function() { this.appendBotMsg(this.jokes[Math.floor(Math.random()*this.jokes.length)]); },
+        wikiSearch: function() {
+            this.appendBotMsg("Lass mich das GPS checken... 🛰️");
+            try {
+                if(navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(pos => {
+                        const url = `https://de.wikipedia.org/w/api.php?action=query&list=geosearch&gsradius=10000&gscoord=${pos.coords.latitude}|${pos.coords.longitude}&format=json&origin=*`;
+                        fetch(url).then(r => r.json()).then(data => {
+                            if(data.query && data.query.geosearch && data.query.geosearch.length > 0) {
+                                const title = data.query.geosearch[0].title;
+                                this.appendBotMsg(`Wir sind in der Nähe von: <b>${title}</b>! Soll ich dir mehr darüber erzählen?`);
+                                this.addXP(10);
+                            } else { this.appendBotMsg("Ich konnte auf Wikipedia gerade nichts in der direkten Nähe finden."); }
+                        }).catch(() => this.appendBotMsg("Fehler bei der Wikipedia-Verbindung."));
+                    }, () => this.appendBotMsg("Ich brauche GPS-Zugriff dafür!"));
+                } else { this.appendBotMsg("Dein Browser unterstützt kein GPS."); }
+            } catch(e) { this.appendBotMsg("GPS Fehler."); }
+        },
+        handleChatSubmit: function() {
+            const inp = document.getElementById('chat-input'); const v = inp.value.trim(); if(!v) return;
+            const c = document.getElementById('chat-container');
+            c.innerHTML += `<div class="flex items-end gap-2.5 justify-end mt-2"><div class="chat-bubble-user p-3 shadow-lg text-[13px] font-medium max-w-[85%] border border-blue-400/30">${v}</div></div>`;
+            inp.value = ''; c.scrollTop = c.scrollHeight;
+            
+            if(this.state.geminiKey) {
+                this.appendBotMsg("<i>Denke nach (Gemini Modus)...</i>");
+                setTimeout(() => { this.appendBotMsg("Die Gemini API-Anbindung ist aktiv. Du hast mich gefragt: " + v + ". (Um Live zu antworten, muss der Fetch-Call implementiert werden)."); }, 1500);
+            } else {
+                setTimeout(() => {
+                    const low = v.toLowerCase();
+                    if(low.includes('maut')) this.appendBotMsg("<b>Maut1.de Box:</b> Immer die GELBEN Spuren nehmen! Langsam ranfahren, wenn es piept, durchfahren. Nicht bremsen!");
+                    else if(low.includes('witz')) this.quickJoke();
+                    else if(low.includes('rom')) this.appendBotMsg("Lasst den Proace Verso zwingend auf dem Parkplatz stehen. In Rom fahrt ihr am besten mit der Metro A!");
+                    else if(low.includes('hallo') || low.includes('ciao')) this.appendBotMsg("Ciao a tutti! Bereit für Italien?");
+                    else this.appendBotMsg("Mamma mia! Dafür habe ich keine Offline-Daten. Gib mir oben einen Gemini API-Key, dann weiss ich alles! Oder frag nach einem Witz.");
+                }, 800);
+            }
+        },
+        appendBotMsg: function(txt) {
+            const c = document.getElementById('chat-container');
+            c.innerHTML += `<div class="flex items-end gap-2.5 mt-2"><div class="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center shrink-0 border border-blue-300 shadow-md"><span class="text-xl drop-shadow-sm">🤖</span></div><div class="chat-bubble-bot p-4 shadow-md text-[13px] font-medium max-w-[85%] leading-relaxed">${txt}</div></div>`;
+            c.scrollTop = c.scrollHeight;
+        }
+    };
+
+    document.addEventListener("DOMContentLoaded", () => { app.init(); });
+</script>
+</body>
+</html>
